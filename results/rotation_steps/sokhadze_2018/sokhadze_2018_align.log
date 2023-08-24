@@ -1,0 +1,16 @@
+
+ VELROT: Velocity field comparison and combination Version 1.01
+
+ There are    71 sites in sys file sokhadze_2018.vel
+ Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
+ There are  3254 sites in sys file serpelloni_2022.vel
+ Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
+ There are    24 matching sites in fundamental file velrot.lnk
+S Component North    #    24 WMean  -0.00 WRMS   0.19 mm/yr, NRMS   1.400
+S Component North    #    24 WMean  -0.00 WRMS   0.19 mm/yr, NRMS   1.400
+S Component East     #    24 WMean  -0.01 WRMS   0.20 mm/yr, NRMS   1.499
+S Component East     #    24 WMean  -0.01 WRMS   0.20 mm/yr, NRMS   1.499
+S Component Up       #    24 WMean   0.28 WRMS   0.91 mm/yr, NRMS   2.325
+S Component Up       #    24 WMean   0.28 WRMS   0.91 mm/yr, NRMS   2.325
+S Component Horz     #    24 WMean  -0.00 WRMS   0.20 mm/yr, NRMS   1.450
+S Component Horz     #    24 WMean  -0.00 WRMS   0.20 mm/yr, NRMS   1.450
