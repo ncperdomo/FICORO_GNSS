@@ -5,6 +5,10 @@ from itertools import combinations
 import numpy as np
 from math import sin, cos, sqrt, atan2, radians
 import time
+import warnings
+
+# Ignore future warnings (I will fix these in a further update)
+warnings.simplefilter(action='ignore', category=FutureWarning) 
 
 def find(parent, i):
     if parent[i] == i:

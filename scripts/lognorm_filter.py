@@ -7,6 +7,10 @@ import numpy as np
 from scipy.stats import lognorm
 import re
 import time
+import warnings
+
+# Suppress RuntimeWarnings
+warnings.simplefilter("ignore", category=RuntimeWarning)
 plt.rcParams['figure.max_open_warning'] = 50  # Avoid warnings
 
 print(f"########## Removing outliers based on lognorm uncertainty distribution ###########")
