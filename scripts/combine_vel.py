@@ -220,6 +220,6 @@ if __name__ == "__main__":
     combine_velocities(input_folder, combined_folder)
     end_time = time.time()
 
-    # Calculate and print the elapsed time
-    elapsed_time = end_time - start_time
-    print("Time taken to combine each data set: {:.2f} seconds".format(elapsed_time))
+    # Calculate and print the elapsed time in minutes
+    elapsed_time = (end_time - start_time) / 60
+    print("Time taken to combine GNSS velocity fields: {:.2f} minutes".format(elapsed_time))
