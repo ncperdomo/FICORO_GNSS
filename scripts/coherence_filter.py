@@ -77,7 +77,9 @@ def filter_gps_velocities(file_name, radius=20):
     num_removed = len(filtered_df)
     num_total = len(df)
     percentage_removed = (num_removed / num_total) * 100
-    print(f"Number of stations removed for {file_name}: {num_removed} / {num_total} ({percentage_removed:.2f}%)")
+
+    #print(f"----------------------------------------------------------------------------------")
+    #print(f"Number of stations removed for {file_name}: {num_removed} / {num_total} ({percentage_removed:.2f}%)")
 
     # Create a directory to store the files listing filtered stations
     output_folder = './results/sites_excluded_coherence'
@@ -93,12 +95,17 @@ def filter_gps_velocities(file_name, radius=20):
     # Save the filtered stations to a new CSV file
     removed_lines_file = os.path.join(output_folder, f'{file_name}.csv')
     filtered_df.to_csv(removed_lines_file, sep=' ', index=False)
-    # print(f"Sites excluded: {removed_lines_file}")
+    #print(f"Sites excluded: {removed_lines_file}")
 
     # Save the included lines to a new CSV file
     included_lines_file = os.path.join(output_clean_coherence, f'{file_name}.csv')
     included_lines_df.to_csv(included_lines_file, sep=' ', index=False)
-    # print(f"Filtered velocities: {included_lines_file}")
+    #print(f"Filtered velocities: {included_lines_file}")
+
+    # Define the text to be printed in multiple lines
+    text = f"\n----------------------------------------------------------------------------------\nNumber of stations removed for {file_name}: {num_removed} / {num_total} ({percentage_removed:.2f}%)\nSites excluded: {removed_lines_file}\nFiltered velocities: {included_lines_file}"
+    print(text)
+    
 
 
 def parallel_filter_gps_velocities(folder_path, radius=20):
