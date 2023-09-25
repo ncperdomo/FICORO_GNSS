@@ -21,10 +21,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 """ Implement a version of the Union-Find (also known as Disjoint Set) data 
 structure. The purpose of these functions is to track and merge groups of
-nearby GNSS stations The find and union functions implement the Union-Find 
-(or Disjoint Set) data structure, which is a data structure that keeps track 
-of a partition of a set into disjoint subsets. It supports two main operations: 
-finding the representative item of a subset and joining two subsets together.""" 
+nearby GNSS stations""" 
 
 def find(parent, i):
     if parent[i] == i:
@@ -186,7 +183,12 @@ def combine_velocities(input_folder, combined_folder):
     dfs = []
     for file_path in file_paths:
         basename = os.path.splitext(os.path.basename(file_path))[0]
-        df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
+        # If basename ends with igb14 set skiprows to 0, otherwise set skiprows to 4, because the igb14 files have no header
+        if basename.endswith('igb14'):
+            df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=0)
+        else:
+            df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
+        #df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
         df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
         df['Ref'] = basename
         dfs.append(df)
@@ -198,9 +200,14 @@ def combine_velocities(input_folder, combined_folder):
     
     # Use the distance dictionary instead of a separation matrix
     distance_dict = create_distance_dict(stations)
-    close_stations = [(i, j) for i, neighbours in distance_dict.items() for j in neighbours]
-    close_stations_groups = make_groups(close_stations)
-    
+    close_stations = [(i, j) for i, neighbours in distance_dict.items() for j in neighbours] # List of tuples of close station pairs
+
+    # Group close stations together based on the distance dictionary
+    close_stations_groups = make_groups(close_stations) # List of lists of close stations
+
+    # Check the length of the close_stations_groups list
+    print("Number of groups of close stations: {}".format(len(close_stations_groups)))
+
     # Create a folder called statistics inside the combined folder path to store the statistics of the combined velocity fields
     statistics_folder = os.path.join(combined_folder, "statistics")
     os.makedirs(statistics_folder, exist_ok=True)
