@@ -188,17 +188,16 @@ def combine_velocities(input_folder, combined_folder):
             df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=0)
         else:
             df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
-        #df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
         df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
         df['Ref'] = basename
         dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
     combined_df[(combined_df['Lon'] >= -15) & (combined_df['Lon'] <= 70) & (combined_df['Lat'] >= 5) & (combined_df['Lat'] <= 60)]
 
-    # Create a separation matrix based on station distances
+    # Get the coordinates of all stations in the combined velocity field as a numpy array of shape (n, 2) where n is the number of stations 
     stations = combined_df[['Lon', 'Lat']].values
     
-    # Use the distance dictionary instead of a separation matrix
+    # Use the distance dictionary instead of a separation matrix to reduce the time complexity of the algorithm
     distance_dict = create_distance_dict(stations)
     close_stations = [(i, j) for i, neighbours in distance_dict.items() for j in neighbours] # List of tuples of close station pairs
 
@@ -212,11 +211,13 @@ def combine_velocities(input_folder, combined_folder):
     statistics_folder = os.path.join(combined_folder, "statistics")
     os.makedirs(statistics_folder, exist_ok=True)
 
-    # Create a DataFrame to store the combined velocity fields
-    aggregated_df = pd.DataFrame()
+    # Create a DataFrame to store the combined velocity fields. Only if basename ends with eura
+    if basename.endswith('eura'):
+        aggregated_df = pd.DataFrame()
 
-    # Create a DataFrame to store statistics of the combined velocity fields
-    statistics_df = pd.DataFrame(columns=['Lon', 'Lat', 'Stat', 'Num'])
+    # Create a DataFrame to store statistics of the combined velocity field. Only if basename ends with eura
+    if basename.endswith('eura'):
+        statistics_df = pd.DataFrame(columns=['Lon', 'Lat', 'Stat', 'Num'])
     
     for group in close_stations_groups:
         # Check if there is more than one station in the group
@@ -225,8 +226,9 @@ def combine_velocities(input_folder, combined_folder):
             group_df = combined_df.loc[group]
             group_df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat','Ref']
 
-            # Save the group_df to the aggregated_df DataFrame to be exported later as a CSV file for debugging purposes
-            aggregated_df = pd.concat([aggregated_df, group_df], ignore_index=True)
+            # Save the group_df to the aggregated_df DataFrame to be exported later as a CSV file for debugging purposes. Only if basename ends with eura
+            if group_df['Ref'].iloc[0].endswith('eura'):
+                aggregated_df = pd.concat([aggregated_df, group_df], ignore_index=True)
             
             # Step 1: Remove outliers based on magnitude and azimuthal direction differences
             # For simplicity, we only consider the 'E.vel' and 'N.vel' components
@@ -258,14 +260,15 @@ def combine_velocities(input_folder, combined_folder):
             group_df['U.adj'] = chosen_station['U.adj'].round(2)
             group_df['Corr'] = chosen_station['Corr'].round(3)
 
-            # Save the number of stations in the group to the statistics_df DataFrame
-            statistics_to_add = pd.DataFrame({
-                'Lon': [chosen_station['Lon'].round(5)],
-                'Lat': [chosen_station['Lat'].round(5)],
-                'Stat': [chosen_station['Stat']],
-                'Num': [len(group)]
-            })
-            statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
+            # Save the number of stations in the group to the statistics_df DataFrame if basename ends with eura
+            if chosen_station['Ref'].endswith('eura'):
+                statistics_to_add = pd.DataFrame({
+                    'Lon': [chosen_station['Lon'].round(5)],
+                    'Lat': [chosen_station['Lat'].round(5)],
+                    'Stat': [chosen_station['Stat']],
+                    'Num': [len(group)]
+                })
+                statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
 
             # Merge the processed group_df back into the combined_df
             combined_df.loc[group] = group_df
@@ -282,14 +285,15 @@ def combine_velocities(input_folder, combined_folder):
             # Keep only the chosen station in the 'Stat' column
             combined_df.loc[group, 'Stat'] = chosen_station['Stat']
 
-            # Save the number of stations in the group [1] to the statistics_df DataFrame
-            statistics_to_add = pd.DataFrame({
-                'Lon': [chosen_station['Lon'].round(5)],
-                'Lat': [chosen_station['Lat'].round(5)],
-                'Stat': [chosen_station['Stat']],
-                'Num': [1]
-            })
-            statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
+            # Save the number of stations in the group [1] to the statistics_df DataFrame if basename ends with eura
+            if chosen_station['Ref'].endswith('eura'):
+                statistics_to_add = pd.DataFrame({
+                    'Lon': [chosen_station['Lon'].round(5)],
+                    'Lat': [chosen_station['Lat'].round(5)],
+                    'Stat': [chosen_station['Stat']],
+                    'Num': [1]
+                })
+                statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
 
     # Drop duplicates (keeping the first occurrence) from the combined_df based on 'Lon' and 'Lat'
     combined_df.drop_duplicates(subset=['Lon', 'Lat'], keep='first', inplace=True)
@@ -301,13 +305,14 @@ def combine_velocities(input_folder, combined_folder):
     output_filename = "combined_vel_" + os.path.basename(input_folder)[-4:] + ".csv"
     combined_df.to_csv(os.path.join(combined_folder, output_filename), sep=' ', index=False)
 
-    # Save groupped stations to a CSV file for debugging purposes
-    group_df_file_path = os.path.join(statistics_folder, "grouped_stations.csv")
-    aggregated_df.to_csv(group_df_file_path, sep=',', index=False)
+    if chosen_station['Ref'].endswith('eura'):
+        # Save groupped stations to a CSV file for debugging purposes
+        group_df_file_path = os.path.join(statistics_folder, "grouped_stations.csv")
+        aggregated_df.to_csv(group_df_file_path, sep=',', index=False)
 
-    # Save the statistics_df to a CSV file
-    statistics_df_file_path = os.path.join(statistics_folder, "site_statistics.csv")
-    statistics_df.to_csv(statistics_df_file_path, sep=',', index=False)
+        # Save the statistics_df to a CSV file
+        statistics_df_file_path = os.path.join(statistics_folder, "site_statistics.csv")
+        statistics_df.to_csv(statistics_df_file_path, sep=',', index=False)
 
 if __name__ == "__main__":
     # Check if the correct number of command-line arguments is provided
