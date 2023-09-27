@@ -2,7 +2,7 @@
 
 ## Python scripts to filter, combine and rotate GNSS velocity fields
 
-This program filters, combines and rotates GNSS velocity fields from column-formatted text files. Each input file should have 13 columns, including 'Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig','Stat'. The goal is to combine published velocity fields in different reference frames, filter outliers, and manage repeated stations that might differ in names or have coordinates varying by ≤ 1 km across different studies.
+This program filters, combines and rotates GNSS velocity fields from column-formatted text files. Each input file should have 13 columns, including 'Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig','Stat'. The goal is to combine published velocity fields in different reference frames, filter outliers, and manage repeated stations that might differ in names or have coordinates varying by $\leq 0.01^\circ$ (1.11 km) across different studies.
 
 **Key Steps:**
 
