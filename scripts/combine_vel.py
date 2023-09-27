@@ -16,7 +16,7 @@ from math import sin, cos, sqrt, atan2, radians
 import time
 import warnings
 
-# Ignore future warnings (I will fix these in a further update)
+# Ignore future warnings (I will fix these in a future release)
 warnings.simplefilter(action='ignore', category=FutureWarning) 
 
 """ Implement a version of the Union-Find (also known as Disjoint Set) data 
@@ -135,8 +135,15 @@ def remove_outliers(data, east_col='E.vel', north_col='N.vel', up_col='U.vel'):
 
     # Check if all data points are outliers
     if len(outlier_indices) == len(data):
-        # Return the median as there are no valid data points left
-        median_velocities = data[[east_col, north_col, up_col]].median()
+        # Compute horizontal and vertical median velocities separately. 
+        # Return the median East and North velocity components as there are no valid data points left
+        median_velocities = data[[east_col, north_col]].median()
+        # For the vertical component, consider only non-zero values in the median calculation
+        median_velocities[up_col] = data[data[up_col] != 0][up_col].median()
+        # If all values are zero, return 0.00 as the median (later, the code will detect zero values and assign NaN)
+        if data[data[up_col] != 0][up_col].empty:
+            print("Warning: All vertical velocities are zero. Assigning 0.00 as the median.")
+            median_velocities[up_col] = round(0.00,2)
         return median_velocities, pd.DataFrame()
 
     # Remove the outliers from the dataset to get the data without outliers
@@ -234,8 +241,14 @@ def combine_velocities(input_folder, combined_folder):
             # For simplicity, we only consider the 'E.vel' and 'N.vel' components
             group_df[['E.vel', 'N.vel', 'U.vel']], outliers = remove_outliers(group_df[['E.vel', 'N.vel', 'U.vel']])
 
-            # Step 2: Compute the median of the velocities
-            median_velocities = group_df[['E.vel', 'N.vel', 'U.vel']].median().round(2)
+            # Step 2: Compute the median of horzontal and vertical velocities separately
+            # For the vertical component, we only include non-zero values in the median calculation. 
+            median_velocities = group_df[['E.vel', 'N.vel']].median().round(2)
+            median_velocities['U.vel'] = group_df[group_df['U.vel'] != 0]['U.vel'].median().round(2)
+            # If all vertical velocities are zero (i.e., the input velocity fields did not estimate verticals), return NaN as the median.
+            if group_df[group_df['U.vel'] != 0]['U.vel'].empty:
+                print("Warning: All vertical velocities are zero. Assigning NaN as the median.")
+                median_velocities['U.vel'] = np.nan
             
             # Step 3: Compute median uncertainties for each velocity component
             uncertainties = group_df[['E.sig', 'N.sig', 'U.sig']].median()
@@ -302,7 +315,14 @@ def combine_velocities(input_folder, combined_folder):
     combined_df.drop(columns=['Ref'], inplace=True)
 
     # Save the combined_df to a CSV file
-    output_filename = "combined_vel_" + os.path.basename(input_folder)[-4:] + ".csv"
+    # If basename ends with igb14, set the output filename to combined_vel_igb14.csv, 
+    # otherwise set based on the last 4 characters of the input folder name
+    if basename.endswith('igb14'):
+        output_filename = "combined_vel_igb14.csv"
+    else:
+        output_filename = "combined_vel_" + os.path.basename(input_folder)[-4:] + ".csv"
+    
+    # Save the combined velocity field to a CSV file
     combined_df.to_csv(os.path.join(combined_folder, output_filename), sep=' ', index=False)
 
     if chosen_station['Ref'].endswith('eura'):
