@@ -19,7 +19,7 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
 
         # Add coastlines
-        fig.coast(land='white', water='skyblue', borders="1/0.2p,gray", shorelines="0.1p,black", area_thresh=4000)
+        fig.coast(water='white', land="gray95", borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
 
         # Read the CSV file from output_coherence_analysis folder
         df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None)
@@ -68,6 +68,10 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
             pen='black',
             label='Accepted vel.',
         )
+
+        # Add scale bar
+        with pygmt.config(FONT_ANNOT_PRIMARY='8p', FONT_LABEL='8p'):
+            fig.basemap(map_scale="JBR+o-1.6c/-0.8c+c0+w1000k+f+lkm")
 
         # Get the base file name without extension
         base_name = os.path.splitext(os.path.basename(file_name))[0]

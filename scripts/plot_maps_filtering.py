@@ -18,7 +18,7 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
         fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
 
         # Add coastlines
-        fig.coast(land='white', water='skyblue', borders="1/0.2p,gray", shorelines="0.1p,black", area_thresh=4000)
+        fig.coast(water='white', land="gray95", borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
 
         # Read the CSV file from output_coherence_analysis folder
         df = pd.read_csv(file_name, sep=' ', skiprows=1, header=None)
@@ -143,6 +143,10 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
         # Add a legend
         fig.legend(position='JTR+o0.15c/-1.25c', box=True)
         
+        # Add scale bar
+        with pygmt.config(FONT_ANNOT_PRIMARY='8p', FONT_LABEL='8p'):
+            fig.basemap(map_scale="JBR+o-1.6c/-0.8c+c0+w1000k+f+lkm")
+
         print(f"Plotting GPS velocities for {base_name} data set")
 
         # Show the figure
