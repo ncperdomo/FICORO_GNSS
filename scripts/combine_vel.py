@@ -40,12 +40,13 @@ def union(parent, rank, x, y):
         rank[xroot] += 1
 
 # Modified version of make_groups function to include unconnected stations
-""" make_groups is a function that uses the above Union-Find implementation 
-to group GNSS stations based on their proximity. It takes a list of indices
-as input and returns a list of groups of indices. Each group contains the 
-indices of stations that are close to each other."""
 
 def make_groups(indices):
+    """ make_groups is a function that uses the above Union-Find implementation 
+    to group GNSS stations based on their proximity. It takes a list of indices
+    as input and returns a list of groups of indices. Each group contains the 
+    indices of stations that are close to each other."""
+
     parent = {}
     rank = {}
 
@@ -75,11 +76,10 @@ def make_groups(indices):
 
     return list(groups.values())
 
-
-""" The calculate_distance function computes the Haversine distance between two sets 
-of latitude and longitude values, returning the result in kilometers."""
-
 def calculate_distance(lat1, lon1, lat2, lon2):
+    """ The calculate_distance function computes the Haversine distance between two sets 
+    of latitude and longitude values, returning the result in kilometers."""
+
     # Calculate the distance between two coordinates in kilometers
     R = 6371.0  # approximate radius of Earth in km
     dlon = radians(lon2) - radians(lon1)
@@ -89,12 +89,12 @@ def calculate_distance(lat1, lon1, lat2, lon2):
     distance = R * c
     return distance
 
-""" The remove_outliers function removes outliers from the dataset based on the 
-magnitude and azimuthal direction of the velocity vectors. It takes a DataFrame 
-as input and returns the data without outliers and the outliers. The function
-implements the Interquartile Range (IQR) method to detect outliers."""
-
 def remove_outliers(data, east_col='E.vel', north_col='N.vel', up_col='U.vel'):
+    """ The remove_outliers function removes outliers from the dataset based on the 
+    magnitude and azimuthal direction of the velocity vectors. It takes a DataFrame 
+    as input and returns the data without outliers and the outliers. The function
+    implements the Interquartile Range (IQR) method to detect outliers."""
+
     # Calculate the magnitude of the velocity vectors
     magnitudes = np.sqrt(data[east_col] ** 2 + data[north_col] ** 2)
 
@@ -153,11 +153,10 @@ def remove_outliers(data, east_col='E.vel', north_col='N.vel', up_col='U.vel'):
     # Return the data without outliers and the outliers
     return data_without_outliers, outliers
 
-""" Instead of creating a separation matrix for station distances, a dictionary 
-approach is used to efficiently map stations within a certain distance of each other.
-This approach reduces the time complexity of the algorithm from O(n^2) to O(n)."""
-
 def create_distance_dict(stations, threshold=1.11):
+    """ Instead of creating a separation matrix for station distances, a dictionary 
+    approach is used to efficiently map stations within a certain distance of each other.
+    This approach reduces the time complexity of the algorithm from O(n^2) to O(n)."""
     distance_dict = {}
     for i, j in product(range(len(stations)), repeat=2):
         distance = calculate_distance(stations[i][1], stations[i][0], stations[j][1], stations[j][0])
@@ -167,21 +166,20 @@ def create_distance_dict(stations, threshold=1.11):
             distance_dict[i].add(j)
     return distance_dict
 
-
-""" The combine_velocities function takes an input folder path containing previously 
-filtered .vel files and an output folder path, where the combined velocity field in 
-different reference frames will be saved. The combination is done by:
-- Reading multiple .vel files and merging their data.
-- Creating a distance dictionary that maps station pairs based on their proximity.
-- Using the distance dictionary, it groups close stations together.
-For each group of close stations, it:
-    - Removes outliers from the group based on magnitude and azimuthal direction differences.
-    - Computes the median of the velocities and uncertainties for each component.
-    - Updates the velocity and other fields for the group based on the first station in the group.
-    - Records statistics for the group (number of solutions per station)
-- After processing all groups, it saves the combined velocity field as a .csv file"""
-
 def combine_velocities(input_folder, combined_folder):
+    """ The combine_velocities function takes an input folder path containing previously 
+    filtered .vel files and an output folder path, where the combined velocity field in 
+    different reference frames will be saved. The combination is done by:
+    - Reading multiple .vel files and merging their data.
+    - Creating a distance dictionary that maps station pairs based on their proximity.
+    - Using the distance dictionary, it groups close stations together.
+    For each group of close stations, it:
+        - Removes outliers from the group based on magnitude and azimuthal direction differences.
+        - Computes the median of the velocities and uncertainties for each component.
+        - Updates the velocity and other fields for the group based on the first station in the group.
+        - Records statistics for the group (number of solutions per station)
+    - After processing all groups, it saves the combined velocity field as a .csv file"""
+
     # Create the output folders if they don't exist
     os.makedirs(combined_folder, exist_ok=True)
 
@@ -199,7 +197,7 @@ def combine_velocities(input_folder, combined_folder):
         df['Ref'] = basename
         dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
-    combined_df[(combined_df['Lon'] >= -15) & (combined_df['Lon'] <= 70) & (combined_df['Lat'] >= 5) & (combined_df['Lat'] <= 60)]
+    # combined_df[(combined_df['Lon'] >= -15) & (combined_df['Lon'] <= 70) & (combined_df['Lat'] >= 5) & (combined_df['Lat'] <= 60)]
 
     # Get the coordinates of all stations in the combined velocity field as a numpy array of shape (n, 2) where n is the number of stations 
     stations = combined_df[['Lon', 'Lat']].values
