@@ -17,8 +17,14 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
         # Set the region and projection of the map
         fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
 
+        # Create a custom color palette for the relief shading
+        pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
+        
+        # Add shaded topography with transparency
+        fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=90, nan_transparent=True)
+
         # Add coastlines
-        fig.coast(water='white', land="gray95", borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
+        fig.coast(water='white', borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
 
         # Read the CSV file from output_coherence_analysis folder
         df = pd.read_csv(file_name, sep=' ', skiprows=1, header=None)
