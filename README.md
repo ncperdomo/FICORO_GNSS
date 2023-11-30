@@ -203,43 +203,159 @@ This step allows users to visualise both, cleaned velocities and outliers with d
 
 #### Step 5: Align velocity fields to the International Terrestrial Reference Frame (ITRF14):
 
-Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT. This program performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field.
+Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT, which is distributted with the GAMIT/GLOBK software package. This program performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field (Serpelloni et al., 2022).
+
+1. **Column Formatting for velrot Compatibility**
+
+- **Folder Checks**:
+  - Checks `coherence_results_path` for data; terminates script if empty.
+  - Ensures `input_files_rot_path` exists, creates it if necessary.
+    - For each `.vel` file in `input_files_rot_path`, the script dynamically creates a new folder in `ITRF14_vel_path`.
+    - Each folder is named after the base name of the corresponding velocity file, ensuring a clear link between the input file and its processing directory.
+
+- **Data Formatting and file/folder management**:
+  - Processes `.csv` files in `coherence_results_path`, converting them to `.vel` format.
+  - Writes formatted data to `input_files_rot_path` for alignment.
+  - The script copies three essential types of files into these newly created folders:
+  - The input velocity file (`*.vel`).
+  - The reference velocity file (`reference_vel`).
+  - The `VELROT` link file (`lnk_file`).
+
+This setup guarantees that each folder contains all necessary files for `velrot` alignment, isolated from other datasets.
+
+2. **Aligning Velocity Fields to ITRF14 with Log Creation**
+
+- **Pre-Alignment Setup**:
+  - Confirms `input_files_rot_path` is populated.
+  - Manages `ITRF14_vel_path` for output data.
+  - Creates `lnk_file` if absent.
+  - Verifies existence of `reference_vel` file.
+
+- **Conditional Processing to Avoid Redundant Rotation**:
+  - Identifies if a `.vel` file is the `reference_vel` (serpelloni et al., 2022 velocity field).
+  - Instead of running `velrot`, the script renames the reference velocity file, appending _igb14.vel to its base name.
+  - Proceeds with rotation for other files.
+
+- **Rotation and Log File Creation**:
+  - Executes the `velrot` command for all the other `.vel` files, aligning them to Serpelloni's velocity field expressed in the IGB14 realisation of ITRF14.
+  - Captures output statistics from the alignment process in log files (`*_align.log`).
+
+- **Post-Rotation Processing**:
+  - Cleans and extracts data from `velrot` output.
+  - Produces aligned `.vel` files with `_igb14.vel` suffix.
+
+- **Organizing Aligned Data**:
+  - Copies aligned velocity files into `igb_nocomb_path/igb_nocomb_subpath`.
 
 Step 5 involves several directories and files, each serving a specific purpose in the data processing workflow. I'll detail each path and its role within the script:
 
-1.  **`coherence_results_path`**:
+-  **`coherence_results_path`**:
     
     -  This directory contains the input CSV files that the script processes. These files correspond to the output from the coherence filtering step. The script checks whether the directory is empty before proceeding.
     
-2.  **`input_files_rot_path`**:
+-  **`input_files_rot_path`**:
     
     -  The code uses this directory to store '.vel' files, converted from the original CSVs. If the directory doesn't exist, the script creates it; if it does, the script clears any existing files to prevent data confusion.
     
-3.  **`ITRF14_vel_path`**:
+-  **`ITRF14_vel_path`**:
     
     -  After converting and processing the '.vel' files, the script uses this directory to handle the outputs that have been aligned with the ITRF14 reference frame. Similar to before, the script prepares this directory by creating or cleaning it as necessary.
     
-4.  **`lnk_file_path` and `lnk_folder_path`**:
+-  **`lnk_file_path` and `lnk_folder_path`**:
     
-    -  These paths relate to a 'link' file required for the alignment process with the Fortran code VELROT. The script ensures the link file exists, creating it if it doesn't. 
+    -  These paths relate to the VELROT 'link' file required for the alignment process with the Fortran code VELROT, distributted with GAMIT/GLOBK. The script ensures the link file exists, creating it if it doesn't. 
     
-5.  **`reference_vel_path`**:
+-  **`reference_vel_path`**:
     
     -  This is a critical file acting as a reference for velocity fields. The script checks explicitly that this file exists because it's necessary for the alignment of velocity fields to the ITRF14 standard. In the code, the reference velocity field to which all the other input velocity fields are aligned is that from Serpelloni et al., (2022), which is expressed in ITRF14 and represents one of the most reliable and extensive velocity fields in the data set. A large number of stations in the reference velocity field is crucial because the least squares alignment and estimation of Helmert parameters is done relying on common stations between the input velocity fields and the master velocity field.
     
-6.  **`results_path`, `igb_nocomb_path`, and `igb_nocomb_subpath`**:
+-  **`results_path`, `igb_nocomb_path`, and `igb_nocomb_subpath`**:
     
     -  These directories are involved in the final stages of the process, where the script stores the final outputs. Specifically, 'igb14_no_comb' is a structured directory where the script organizes the processed data aligned to the 'igb14' reference frame. The code handles the creation of these directories if they don't exist to properly archive the final products.
 
 ---
 #### Step 6: Rotate velocity fields using Euler poles
 
+This step focuses on rotating GNSS velocity fields into different tectonic reference frames using Euler poles.
+
+1. **Setting Up Destination Folders**:
+   - Destination folders for each reference frame (`arab`, `eura`, `nubi`, `sina`, `anat`) and `igb14` are set up within `results_path/igb_nocomb_path`.
+   
+   - **Folder Paths**: The script sets up distinct destination folders for each tectonic plate (`arab`, `eura`, `nubi`, `sina`, `anat`) and for the `igb14` reference frame.
+        - **Variables**: 
+        - `arab_dest_folder`: Destination folder for velocity fields expressed in Arabia-fixed reference frame
+        - `eura_dest_folder`: Destination folder for velocity fields expressed in Eurasia-fixed reference frame
+        - `nubi_dest_folder`: Destination folder for velocity fields expressed in Nubia-fixed reference frame
+        - `sina_dest_folder`: Destination folder for velocity fields expressed in Southern Sinai-fixed reference frame
+        - `anat_dest_folder`: Destination folder for velocity fields expressed in East Anatolia-fixed reference frame
+        - `igb14_dest_folder`: Destination folder for for velocity fields expressed in IGB14/ITRF14 reference frame
+    - **Folder Creation**: Each destination folder is created using `os.makedirs`, ensuring the script can proceed without interruption due to missing directories.
+
+2. **Defining Euler Poles**:
+   - Euler pole parameters for Arabia, Eurasia, Nubia, Sinai, and Anatolia are defined based on recent studies.
+
+3. **Processing Velocity Files**:
+   - Iterates through each `.vel` file in `igb14_dest_folder`.
+   - Removes `_igb14` suffix from the base name.
+   - Applies Euler pole rotation for each tectonic plate using the `cvframe` script distributted with GAMIT/GLOBK.
+   - Names rotated files as `"{base}_{ref_frame}.vel"`.
+
+4. **File Management and Rotation**:
+   - Moves each rotated file to its respective destination folder based on the reference frame.
+
+5. **Completion Message**:
+   - Prints a completion message post-rotation.
+
 ---
 #### Step 7: Combine velocity fields
+
+Step 7 involves the combination of GNSS velocity fields for each reference frame, using a parallel processing approach.
+
+1. Combining GNSS Velocities
+- Function `combine_velocities(ref_frame)`:
+  - A function designed to combine GPS velocities for a given reference frame.
+  - It utilizes the `combination_script_path` to process data in the specified `ref_frame_folder`.
+- **Process**:
+  - For each reference frame, the function is called to combine GNSS velocity data in that specific frame.
+
+2. Parallel Execution
+- **ThreadPoolExecutor**:
+  - The script uses `concurrent.futures.ThreadPoolExecutor` for parallel execution.
+  - This approach significantly speeds up the process by handling multiple reference frames simultaneously.
+- **Total Workers**:
+  - The number of workers is set to the number of reference frames plus one (for IGB14).
+- **Execution**:
+  - The `executor.map` function is used to apply `combine_velocities` to each reference frame.
+  - Additionally, the IGB14/ITRF14 reference frame combination is handled separately.
+
+3. Error Handling
+- The script checks for the existence of the `combination_script_path`.
+- If the script is not found, an error message is displayed, and the process is terminated.
 
 ![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.jpg)
 ---
 #### Step 8: Plot combined velocity field in different reference frames
+
+In this step, the code executes the plotting script `plot_rotated_script_path`, corresponds to `scripts/plot_rotated_vels.py`.  
+This script plots the horizontal GNSS velocity fields in different reference frames given an input folder containing the velocity fields as CSV files.
+
+1. Function `plot_gps_velocity_fields(folder_path)`:
+- **Purpose**: Display maps of GPS velocity fields from CSV files.
+- **Process**:
+  - **Find CSV Files**: The function searches for all CSV files in the specified input `folder_path`.
+  - **Figure Creation**: For each CSV file, a PyGMT figure is created.
+    - Sets region, projection, and frame for the map.
+    - Adds shaded topography, coastlines, and custom color palettes.
+  - **Data Reading**: Reads CSV file data into a pandas DataFrame, setting appropriate column names.
+  - **Data Validation**: Skips plotting if the DataFrame is empty.
+  - **Velocity Vector Creation**: 
+    - Extracts coordinates, velocity components, and uncertainties (which are not used nor plotted in the current version of the code).
+    - Calculates the velocity magnitude and normalizes it.
+    - Creates a list of vectors for plotting.
+  - **Plotting**:
+    - Plots GPS velocity vectors with specified style and color.
+    - Adds a scale bar to the map.
+  - **Displaying Figures**: Shows the plotted figure and prints a status message for each reference frame.
 
 ![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.jpg)
 
