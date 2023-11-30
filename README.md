@@ -195,7 +195,7 @@ Step 4 in the workflow pertains to the visual representation of the GNSS velocit
     -   If the script is not found, an error message prints, and the program terminates by calling `exit(1)`, indicating that an error has occurred. 
     - For each input velocity field, the plotting script takes the cleaned data and outliers from the previous velocity filtering steps and creates a visual representation on a map showing vectors indicating tectonic plate motions at each GNSS station. Different colours are used to denote whether a station passed the filtering step or was classified as an outlier.
 
-This step allows users to visualise both, cleaned velocities and outliers with different colours on the same map for each of the input velocity fields. Below I show the results for one of the velocity fields by [Billi., et al., (2023)](https://doi.org/10.1016/j.epsl.2022.117906)covering northern Africa. The left panel shows velocities and outliers based on the two criteria discussed in Step 3, the centre and right panels show the the lognormal fit to the velocity uncertainty distribution in East and North velocity components expressed in mm/yr. Stations with velocity uncertainties above the 99th lognormal percentile (black dashed line) in East or North velocity components are classified as outliers. 
+This step allows users to visualise both, cleaned velocities and outliers with different colours on the same map for each of the input velocity fields. Below I show the results for one of the velocity fields by [Billi., et al., (2023)](https://doi.org/10.1016/j.epsl.2022.117906) covering northern Africa. The left panel shows velocities and outliers based on the two criteria discussed in Step 3, the centre and right panels show the the lognormal fit to the velocity uncertainty distribution in East and North velocity components expressed in mm/yr. Stations with velocity uncertainties above the 99th lognormal percentile (black dashed line) in East or North velocity components are classified as outliers. 
 
 ![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/filtering.jpg)
 
@@ -203,7 +203,7 @@ This step allows users to visualise both, cleaned velocities and outliers with d
 
 #### Step 5: Align velocity fields to the International Terrestrial Reference Frame (ITRF14):
 
-Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT, which is distributted with the GAMIT/GLOBK software package. This program performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field (Serpelloni et al., 2022).
+Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT, which is distributed with the GAMIT/GLOBK software package. This program performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field (Serpelloni et al., 2022).
 
 1. **Column Formatting for velrot Compatibility**
 
@@ -263,7 +263,7 @@ Step 5 involves several directories and files, each serving a specific purpose i
     
 -  **`lnk_file_path` and `lnk_folder_path`**:
     
-    -  These paths relate to the VELROT 'link' file required for the alignment process with the Fortran code VELROT, distributted with GAMIT/GLOBK. The script ensures the link file exists, creating it if it doesn't. 
+    -  These paths relate to the VELROT 'link' file required for the alignment process with the Fortran code VELROT, distributed with GAMIT/GLOBK. The script ensures the link file exists, creating it if it doesn't. 
     
 -  **`reference_vel_path`**:
     
