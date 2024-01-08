@@ -15,7 +15,8 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
         fig = pygmt.Figure()
 
         # Set the region and projection of the map
-        fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
+        #fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
+        fig.basemap(region=[-20, 125, 5, 60], projection='M15c', frame='afg') # All Alpine-Himalayan belt
 
         # Create a custom color palette for the relief shading
         pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
