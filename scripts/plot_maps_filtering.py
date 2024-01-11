@@ -57,8 +57,8 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
         for i in range(len(df)):
             x_start = lon[i]
             y_start = lat[i]
-            direction_degrees = 90 - np.arctan2(n_vel[i], e_vel[i]) * 180 / np.pi
-            length = normalized_vel_mag[i] * 0.5
+            direction_degrees = np.degrees(np.arctan2(n_vel[i], e_vel[i]))
+            length = normalized_vel_mag[i] #* 0.5
 
             # Add the vector to the list
             vectors.append([x_start, y_start, direction_degrees, length])
