@@ -1,8 +1,8 @@
-# Filtering and Combining GNSS Velocity Fields in Python
+# Filtering, Combining and Rotating GNSS Velocity Fields in Python (FICORO)
 
 ## 1) Introduction
 
-The Mediterranean and the Middle East regions provide a unique opportunity to investigate plate dynamics and large-scale crustal deformation and earthquake hazard given the complex tectonic interactions involving multiple plates and tectonic regimes. The expansion of regional GNSS networks and the availability of published velocities have facilitated a broader understanding of active tectonics in these regions. However, despite these advancements, few attempts have been made to integrate the available GNSS velocities, and no consensus exists in the geodetic community on the most effective way to filter and harmonise geodetic data sets. The primary objective of this project is to filter, combine and rotate GNSS velocity fields from column-formatted text files. These data are obtained from different geodetic studies of lithospheric deformation, with each file comprising 13 distinct columns, including 'Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat'. The goal is to combine all the published GNSS velocity fields in the Euro-Mediterranean region, Asia Minor, and the Middle East, rotate them into different reference frames, filter outliers, and manage repeated stations that might differ in names or have coordinates varying by $\leq 0.01^\circ$ (1.11 km) across different studies. By providing insights into plate motions and crustal deformation, our results contribute to earthquake hazard assessment, particularly in light of the recent earthquakes in Türkiye, Syria and Morocco. Moreover, by proposing these open-access codes, I advocate for a collaborative effort within the geodetic community to adopt common procedures for cleaning and combining GNSS velocities. This standardisation will enhance the reliability and comparability of geodetic measurements and streamline collaborative efforts and insights across different research groups.
+The Alpine-Himalayan belt provides a unique opportunity to investigate plate dynamics and large-scale crustal deformation and earthquake hazard given the complex tectonic interactions involving multiple plates and tectonic regimes. The expansion of regional GNSS networks and the availability of published velocities have facilitated a broader understanding of active tectonics in this region. However, despite these advancements, few attempts have been made to integrate the available GNSS velocities, and consensus on the optimal methods for filtering and harmonizing geodetic datasets remains elusive. The primary objective of this project is to filter, combine and rotate GNSS velocity fields from column-formatted text files. These data are obtained from different geodetic studies of lithospheric deformation, with each input file comprising 13 distinct columns, including 'Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat'. The goal is to combine all the published GNSS velocity fields along the Alpine-Himalayan belt, rotate them into different reference frames, filter outliers, and manage repeated stations that might differ in names or have coordinates varying by $\leq 0.01^\circ$ (1.11 km) across different studies. By providing insights into plate motions and crustal deformation, our results contribute to earthquake hazard assessment, particularly in light of the recent earthquakes in Türkiye, Syria and Morocco. Moreover, by proposing these open-access codes, I advocate for a collaborative effort within the geodetic community to adopt common procedures for cleaning and combining GNSS velocities. This standardisation will enhance the reliability and comparability of geodetic measurements and streamline collaborative efforts and insights across different research groups.
 
 The methodology implemented in the code combines some of the approaches by previous research on aggregated GNSS velocity fields, including [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451) and [Zeng et al., (2022)](https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/6/3121/617675/GPS-Velocity-Field-of-the-Western-United-States).
 
@@ -10,45 +10,56 @@ The methodology implemented in the code combines some of the approaches by previ
 
 ## 2) Overview of the code 
 
-The code is composed of a master Jupyter notebook called **`FIROCO_GNSS.ipynb`**, an input folder called `raw_input` containing the input velocity fields as column-formatted text files with `.raw` extension. A folder called `scripts` contains ancillary Python scripts to filter, combine and rotate GNSS velocity fields. The folder structure is organised as follows:
+This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** and an input folder titled `raw_input`. Within the `raw_input` folder, you'll find the input velocity fields stored as column-formatted text files with the `.raw` extension. To facilitate data processing, there's a `scripts` folder containing additional Python scripts designed for filtering, rotating and combining GNSS velocity fields. If you need to manually remove outliers from the data, you can utilize the `manual_filter` folder, which houses a CSV file that enables you to define specific geographic coordinates (latitude and longitude) and corresponding radii (in kilometers) for the removal of outliers from the combined velocity fields in diferent reference frames. To provide clarity, the folder structure is organized as follows:
 
 <pre>
-📦FICORO_GNSS  
- ┣ 📂raw_input  
- ┃ ┣ 📜alchalbi_2013.raw  
- ┃ ┣ 📜bahrouni_2020.raw  
- ┃ ┣ 📜billi_2023.raw  
- ┃ ┣ 📜bougrine_2019.raw  
- ┃ ┣ 📜briole_2021.raw  
- ┃ ┣ 📜castro_2021.raw  
- ┃ ┣ 📜england_2016.raw  
- ┃ ┣ 📜ergintav_2023.raw  
- ┃ ┣ 📜euref_all.raw  
- ┃ ┣ 📜euref_ch8.raw  
- ┃ ┣ 📜floyd_2023.raw  
- ┃ ┣ 📜gomez_2020.raw  
- ┃ ┣ 📜graham_2021.raw  
- ┃ ┣ 📜hamiel_2021.raw  
- ┃ ┣ 📜khorrami_2019.raw  
- ┃ ┣ 📜kurt_2023.raw  
- ┃ ┣ 📜mcclusky_2010.raw  
- ┃ ┣ 📜nocquet_2012.raw  
- ┃ ┣ 📜ozdemir_2019.raw  
- ┃ ┣ 📜ozkan_2022.raw  
- ┃ ┣ 📜pinaValdes_2022.raw  
- ┃ ┣ 📜reilinger_2006.raw  
- ┃ ┣ 📜saleh_2015.raw  
- ┃ ┣ 📜serpelloni_2022.raw  
- ┃ ┣ 📜sokhadze_2018.raw  
- ┃ ┣ 📜viltres_2020.raw  
- ┃ ┗ 📜viltres_2022.raw  
- ┣ 📂scripts  
- ┃ ┣ 📜coherence_filter.py  
- ┃ ┣ 📜combine_vel.py  
- ┃ ┣ 📜lognorm_filter.py  
- ┃ ┣ 📜plot_maps_filtering.py  
- ┃ ┗ 📜plot_rotated_vels.py  
- ┣ 📜FICORO_GNSS.ipynb  
+📦FICORO_GNSS
+ ┣ 📜FICORO_GNSS.ipynb
+ ┣ 📂raw_input
+ ┃ ┣ 📜alchalbi_2013.raw
+ ┃ ┣ 📜bahrouni_2020.raw
+ ┃ ┣ 📜billi_2023.raw
+ ┃ ┣ 📜bougrine_2019.raw
+ ┃ ┣ 📜briole_2021.raw
+ ┃ ┣ 📜castro_2021.raw
+ ┃ ┣ 📜england_2016.raw
+ ┃ ┣ 📜ergintav_2023.raw
+ ┃ ┣ 📜euref_all.raw
+ ┃ ┣ 📜euref_ch8.raw
+ ┃ ┣ 📜floyd_2023.raw
+ ┃ ┣ 📜gomez_2020.raw
+ ┃ ┣ 📜graham_2021.raw
+ ┃ ┣ 📜hamiel_2021.raw
+ ┃ ┣ 📜khorrami_2019.raw
+ ┃ ┣ 📜kurt_2023.raw
+ ┃ ┣ 📜liang_2013.raw
+ ┃ ┣ 📜mcclusky_2010.raw
+ ┃ ┣ 📜nocquet_2012.raw
+ ┃ ┣ 📜ozdemir_2019.raw
+ ┃ ┣ 📜ozkan_2022.raw
+ ┃ ┣ 📜pinaValdes_2022.raw
+ ┃ ┣ 📜reilinger_2006.raw
+ ┃ ┣ 📜saleh_2015.raw
+ ┃ ┣ 📜serpelloni_2022.raw
+ ┃ ┣ 📜sokhadze_2018.raw
+ ┃ ┣ 📜stamps.raw
+ ┃ ┣ 📜viltres_2020.raw
+ ┃ ┣ 📜viltres_2022.raw
+ ┃ ┣ 📜wang_barbot_2023.raw
+ ┃ ┣ 📜wang_shen_2020.raw
+ ┃ ┗ 📜wedmore_2021.raw
+ ┣ 📂scripts
+ ┃ ┣ 📜coherence_filter.py
+ ┃ ┣ 📜combine_vel.py
+ ┃ ┣ 📜lognorm_filter.py
+ ┃ ┣ 📜plot_maps_filtering.py
+ ┃ ┗ 📜plot_rotated_vels.py
+ ┣ 📂manual_filter
+ ┃ ┗ 📜filter_criteria.csv
+ ┣ 📂Readme_figures
+ ┃ ┣ 📜filtering.jpg
+ ┃ ┣ 📜gps_map.jpg
+ ┃ ┗ 📜num_estimates.jpg
  ┗ 📜README.md
 </pre>
 
@@ -60,9 +71,9 @@ The code is composed of a master Jupyter notebook called **`FIROCO_GNSS.ipynb`**
 
 1. **Data importing:** Load raw data from an input directory.
 
-2. **Filtering by uncertainty distribution:** Analyse the lognormal distribution of velocity uncertainties, excluding stations that fall outside the 99 percentile in the East and North velocity components.
+2. **Filtering by uncertainty distribution:** Analyse the lognormal distribution of velocity uncertainties, excluding stations that fall outside the 99 percentile in the East and North velocity uncertainty components.
 
-3. **Z-score Filtering:** Remove stations if velocity magnitudes in the East and North components diverge over 2 sigma from the mean, considering a radius of 20 km.
+3. **Z-score Filtering:** Remove stations if velocity magnitudes in the East and North velocity components diverge over 2 sigma from the mean, considering a radius of 20 km. Additionally, the code allows applying less stringent filtering criteria (n sigma) based on the name of the input file, allowing for a customizable approach to data filtering.
 
 4. **Velocity field alignment to a common reference frame:** Implement a least squares approach to align all the data sets to a reference velocity field using a 6-parameter Helmert transformation (3 translations and 3 rotations), leveraging on repeated stations in both the input and reference data sets.
 
@@ -70,7 +81,7 @@ The code is composed of a master Jupyter notebook called **`FIROCO_GNSS.ipynb`**
 
 6. **Velocity field combination:** Combine individual velocity fields into a single comprehensive velocity field.
 
-	1. Station Proximity Analysis: Cluster stations within a 1 km range of one another (they are probably the same station reported by different studies. Although, in some cases, collocated stations might be included). For such proximate stations:
+	1. Station Proximity Analysis: Cluster stations within a $0.01^\circ$ (1.11 km) range of one another (they are probably the same station reported by different studies. Although, in some cases, collocated stations might be included too). For such proximate stations:
 	
 		1. Implements the Interquartile Range (IQR) method to detect outliers, omitting solutions displaying disparities in magnitude, azimuthal direction, or both. The thresholds for outlier detection are set as: 	
 
@@ -82,6 +93,8 @@ The code is composed of a master Jupyter notebook called **`FIROCO_GNSS.ipynb`**
 		3. Derive uncertainties for each velocity component, taking the median value of stations within a $0.01^\circ$ (1.11 km) radius.
 
 		4. Save the combined velocity field data and plot velocity maps.
+
+7. **Manual filtering**: Remove outliers based on geographical coordinates and radii, generating cleaned data files and logs of removed stations. The script uses parallel processing to handle multiple input velocity fields in diferent reference frames efficiently. 
 
 ---
 
@@ -101,6 +114,7 @@ This master Jupyter Notebook follows a streamlined process composed of 8 steps:
 - Step 6: Rotate velocity fields using Euler poles
 - Step 7: Combine velocity fields using a least squares approach
 - Step 8: Plot the combined velocity field in different reference frames
+- Step 9: Manual filtering of outliers
 
 ---
 
@@ -193,7 +207,7 @@ Step 4 in the workflow pertains to the visual representation of the GNSS velocit
     -   The code checks whether the required plotting script (`plot_maps_filter_path`) exists in the specified path. This is a preventative measure ensuring that the workflow doesn't proceed with a missing file, which would lead to errors.
     -   If the script is found, it is executed using `subprocess.run()`, which is a Python standard library method for invoking subprocesses. In this context, it's used to run a Python script that handles the map plotting using the pygmt module.
     -   If the script is not found, an error message prints, and the program terminates by calling `exit(1)`, indicating that an error has occurred. 
-    - For each input velocity field, the plotting script takes the cleaned data and outliers from the previous velocity filtering steps and creates a visual representation on a map showing vectors indicating tectonic plate motions at each GNSS station. Different colours are used to denote whether a station passed the filtering step or was classified as an outlier.
+    - For each input velocity field, the plotting script takes the cleaned data and outliers from the previous velocity filtering steps and creates a map showing vectors indicating the velocity at each GNSS station. Different colours are used to denote whether a station passed the filtering step or was classified as an outlier.
 
 This step allows users to visualise both, cleaned velocities and outliers with different colours on the same map for each of the input velocity fields. Below I show the results for one of the velocity fields by [Billi., et al., (2023)](https://doi.org/10.1016/j.epsl.2022.117906) covering northern Africa. The left panel shows velocities and outliers based on the two criteria discussed in Step 3, the centre and right panels show the the lognormal fit to the velocity uncertainty distribution in East and North velocity components expressed in mm/yr. Stations with velocity uncertainties above the 99th lognormal percentile (black dashed line) in East or North velocity components are classified as outliers. 
 
@@ -203,7 +217,7 @@ This step allows users to visualise both, cleaned velocities and outliers with d
 
 #### Step 5: Align velocity fields to the International Terrestrial Reference Frame (ITRF14):
 
-Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT, which is distributed with the GAMIT/GLOBK software package. This program performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field (Serpelloni et al., 2022).
+Step 5 is a comprehensive data preparation and processing stage ensuring that GNSS data is correctly formatted for use with the external Fortran script VELROT, which is distributed with the [GAMIT/GLOBK software package](http://geoweb.mit.edu/gg/). VELROT performs a least squares inversion leveraging common sites between a reference velocity field and an input velocity field, performing a 6-parameter Helmert transformation (3 rotations and 3 translations without scale). The master velocity field is expressed in a no-net-rotation reference frame (ITRF2014), and each input file is aligned with the master velocity field (Serpelloni et al., 2022).
 
 1. **Column Formatting for velrot Compatibility**
 
@@ -358,6 +372,11 @@ This script plots the horizontal GNSS velocity fields in different reference fra
   - **Displaying Figures**: Shows the plotted figure and prints a status message for each reference frame.
 
 ![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.jpg)
+
+---
+#### Step 9: Manual filtering of outliers
+
+In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a cpace-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in in the folder `./results/combined_velocities/manual_filter/`.
 
 ---
 #### To do: Unit testing
