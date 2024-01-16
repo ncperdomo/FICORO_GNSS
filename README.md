@@ -113,8 +113,8 @@ This master Jupyter Notebook follows a streamlined process composed of 8 steps:
 - Step 5: Align velocity fields to the International Terrestrial Reference Frame (ITRF14)
 - Step 6: Rotate velocity fields using Euler poles
 - Step 7: Combine velocity fields using a least squares approach
-- Step 8: Plot the combined velocity field in different reference frames
-- Step 9: Manual filtering of outliers
+- Step 8: Manual filtering of outliers
+- Step 9: Plot the combined velocity field in different reference frames
 
 ---
 
@@ -348,7 +348,12 @@ Step 7 involves the combination of GNSS velocity fields for each reference frame
 
 ![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.jpg)
 ---
-#### Step 8: Plot combined velocity field in different reference frames
+#### Step 8: Manual filtering of outliers
+
+In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a cpace-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in in the folder `./results/combined_velocities/manual_filter/`.
+
+---
+#### Step 9: Plot combined velocity field in different reference frames
 
 In this step, the code executes the plotting script `plot_rotated_script_path`, corresponds to `scripts/plot_rotated_vels.py`.  
 This script plots the horizontal GNSS velocity fields in different reference frames given an input folder containing the velocity fields as CSV files.
@@ -372,11 +377,6 @@ This script plots the horizontal GNSS velocity fields in different reference fra
   - **Displaying Figures**: Shows the plotted figure and prints a status message for each reference frame.
 
 ![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.jpg)
-
----
-#### Step 9: Manual filtering of outliers
-
-In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a cpace-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in in the folder `./results/combined_velocities/manual_filter/`.
 
 ---
 #### To do: Unit testing
