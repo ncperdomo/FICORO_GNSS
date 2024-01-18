@@ -8,6 +8,10 @@ The methodology implemented in the code combines some of the approaches by previ
 
 ---
 
+**Note:** This code currently relies on the installation of GAMIT/GLOBK, as it utilizes the Fortran codes VELROT and CVFRAME included with GAMIT/GLOBK to align and rotate velocity fields. In upcoming releases, I plan to provide Python scripts that will eliminate the need for GAMIT/GLOBK. Until then, please ensure that GAMIT/GLOBK is installed before running this code.
+
+---
+
 ## 2) Overview of the code 
 
 This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** and an input folder titled `raw_input`. Within the `raw_input` folder, you'll find the input velocity fields stored as column-formatted text files with the `.raw` extension. To facilitate data processing, there's a `scripts` folder containing additional Python scripts designed for filtering, rotating and combining GNSS velocity fields. If you need to manually remove outliers from the data, you can utilize the `manual_filter` folder, which houses a CSV file that enables you to define specific geographic coordinates (latitude and longitude) and corresponding radii (in kilometers) for the removal of outliers from the combined velocity fields in diferent reference frames. To provide clarity, the folder structure is organized as follows:
@@ -347,10 +351,11 @@ Step 7 involves the combination of GNSS velocity fields for each reference frame
 - If the script is not found, an error message is displayed, and the process is terminated.
 
 ![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.jpg)
+
 ---
 #### Step 8: Manual filtering of outliers
 
-In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a cpace-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in in the folder `./results/combined_velocities/manual_filter/`.
+In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a space-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in the folder `./results/combined_velocities/manual_filter/`.
 
 ---
 #### Step 9: Plot combined velocity field in different reference frames
