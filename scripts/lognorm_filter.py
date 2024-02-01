@@ -1,5 +1,5 @@
 import os
-import sys 
+import sys
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ import warnings
 warnings.simplefilter("ignore", category=RuntimeWarning)
 plt.rcParams['figure.max_open_warning'] = 50  # Avoid warnings
 
-print(f"########## Removing outliers based on lognorm uncertainty distribution ###########")
+print(f"########## Removing outliers based on fitted lognorm distribution ###########")
 
 def filter_and_plot_data(folder_path, log_output_folder, output_folder, figure_folder):
     # Find all .vel files in the folder
@@ -51,56 +51,50 @@ def filter_and_plot_data(folder_path, log_output_folder, output_folder, figure_f
 
     # Iterate over each data frame
     for i, df in enumerate(dfs):
-        # Filter stations with uncertainties higher than the 99th percentile
-        e_sig_higher_than_99 = df.loc[df['E.sig'] > np.percentile(df['E.sig'], 99)]
-        n_sig_higher_than_99 = df.loc[df['N.sig'] > np.percentile(df['N.sig'], 99)]
+        # Fit a lognormal distribution to E.sig and N.sig columns
+        e_sig_params = lognorm.fit(df['E.sig'].dropna())
+        n_sig_params = lognorm.fit(df['N.sig'].dropna())
 
-        # Combine the stations for both components
+        # Calculate the 99th percentile of the fitted lognormal distributions
+        e_sig_99th = lognorm.ppf(0.99, *e_sig_params)
+        n_sig_99th = lognorm.ppf(0.99, *n_sig_params)
+
+        # Identify stations with uncertainties larger than the 99th percentile
+        e_sig_higher_than_99 = df[df['E.sig'] > e_sig_99th]
+        n_sig_higher_than_99 = df[df['N.sig'] > n_sig_99th]
         combined_stations_higher_than_99 = pd.concat([e_sig_higher_than_99, n_sig_higher_than_99]).drop_duplicates()
 
-        print(f"----------------------------------------------------------------------------------")
-        
+        # Filter out data points that exceed the 99th percentile in the fitted lognormal distribution
+        filtered_df = df[(df['E.sig'] < e_sig_99th) & (df['N.sig'] < n_sig_99th)]
+
         # Print the number of removed stations for the current dataset
         file_name = os.path.splitext(os.path.basename(file_names[i]))[0]
         num_removed = len(combined_stations_higher_than_99)
         num_total = len(df)
         percentage_removed = (num_removed / num_total) * 100
+        print(f"----------------------------------------------------------------------------------")
         print(f"Number of stations removed for {file_name}: {num_removed} / {num_total} ({percentage_removed:.2f}%)")
 
-        # Save the stations with uncertainties larger than 99 percentile to a CSV file
+        # Save the stations with uncertainties larger than the 99th percentile to a CSV file
         log_output_file = os.path.join(log_output_folder, f'{file_name}.csv')
         combined_stations_higher_than_99.to_csv(log_output_file, sep=' ', index=False)
-        print(f"Sites excluded: {log_output_file}")
+        print(f"Sites with uncertainties larger than 99th percentile saved: {log_output_file}")
 
-        # Filter stations with uncertainties smaller than the 99th percentile
-        e_sig_smaller_than_99 = df.loc[df['E.sig'] < np.percentile(df['E.sig'], 99)]
-        n_sig_smaller_than_99 = df.loc[df['N.sig'] < np.percentile(df['N.sig'], 99)]
-
-        # Combine the stations for both components
-        combined_stations_smaller_than_99 = pd.concat([e_sig_smaller_than_99, n_sig_smaller_than_99]).drop_duplicates()
-
-        # Filter stations whose uncertainties in both East and North components are smaller than the 99th percentile
-        combined_stations_smaller_than_99 = combined_stations_smaller_than_99[
-            (combined_stations_smaller_than_99['E.sig'] < np.percentile(df['E.sig'], 99)) &
-            (combined_stations_smaller_than_99['N.sig'] < np.percentile(df['N.sig'], 99))
-        ]
-
-        # Save the stations with uncertainties smaller than 99 percentile to a CSV file
+        # Save the filtered data to a CSV file
         output_file = os.path.join(output_folder, f'{file_name}.csv')
-        combined_stations_smaller_than_99.to_csv(output_file, sep=' ', index=False)
+        filtered_df.to_csv(output_file, sep=' ', index=False)
         print(f"Filtered velocities: {output_file}")
 
         # Plot individual subfigures for each dataset
-        plot_subfigures(df, file_name, figure_folder)
+        plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th)
 
-def plot_subfigures(df, file_name, figure_folder):
+def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     # Remove NaN values
     e_sig_values = df['E.sig'].dropna()
     n_sig_values = df['N.sig'].dropna()
 
-    # Calculate lognormal parameters for E.sig column
+    # Calculate lognormal parameters for E.sig and N.sig columns
     e_sig_params = lognorm.fit(e_sig_values)
-    # Calculate lognormal parameters for N.sig column
     n_sig_params = lognorm.fit(n_sig_values)
 
     # Generate data points for best lognormal fit
@@ -110,38 +104,26 @@ def plot_subfigures(df, file_name, figure_folder):
     x_n_sig = np.linspace(n_sig_values.min(), n_sig_values.max(), 100)
     y_n_sig = lognorm.pdf(x_n_sig, *n_sig_params)
 
-    # Calculate the 99th percentile of the lognormal distribution
-    e_sig_99 = lognorm.ppf(0.99, *e_sig_params)
-    n_sig_99 = lognorm.ppf(0.99, *n_sig_params)
-
-    # Calculate the median of the E.sig values
-    e_sig_median = np.median(e_sig_values)
-
-    # Calculate the median of the N.sig values
-    n_sig_median = np.median(n_sig_values)
-
     # Create two subplots in one figure
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
 
-    # Plot histogram and lognormal fit in the first subplot
+    # Plot histogram and lognormal fit in the first subplot (E.sig)
     counts_e_sig, bins_e_sig, _ = axs[0].hist(e_sig_values, bins=20, density=False, alpha=0.7)
     bin_width_e_sig = bins_e_sig[1] - bins_e_sig[0]
     normalized_y_e_sig = y_e_sig * len(e_sig_values) * bin_width_e_sig
     axs[0].plot(x_e_sig, normalized_y_e_sig, 'r-', label='Lognormal Fit')
-    axs[0].axvline(e_sig_99, color='k', linestyle='--', label=f'99%: {e_sig_99:.2f}')
-    axs[0].axvline(e_sig_median, color='orange', linestyle='--', label=f'Median: {e_sig_median:.2f}')
+    axs[0].axvline(e_sig_99th, color='g', linestyle='--', label=f'99%: {e_sig_99th:.2f}')
     axs[0].set_title(f'{file_name}: East Velocity Uncertainty')
     axs[0].set_xlabel('Uncertainty')
     axs[0].set_ylabel('Count')
     axs[0].legend()
 
-    # Plot histogram and lognormal fit in the second subplot
+    # Plot histogram and lognormal fit in the second subplot (N.sig)
     counts_n_sig, bins_n_sig, _ = axs[1].hist(n_sig_values, bins=20, density=False, alpha=0.7)
     bin_width_n_sig = bins_n_sig[1] - bins_n_sig[0]
     normalized_y_n_sig = y_n_sig * len(n_sig_values) * bin_width_n_sig
     axs[1].plot(x_n_sig, normalized_y_n_sig, 'r-', label='Lognormal Fit')
-    axs[1].axvline(n_sig_99, color='k', linestyle='--', label=f'99%: {n_sig_99:.2f}')
-    axs[1].axvline(n_sig_median, color='orange', linestyle='--', label=f'Median: {n_sig_median:.2f}')
+    axs[1].axvline(n_sig_99th, color='g', linestyle='--', label=f'99%: {n_sig_99th:.2f}')
     axs[1].set_title(f'{file_name}: North Velocity Uncertainty')
     axs[1].set_xlabel('Uncertainty')
     axs[1].set_ylabel('Count')
@@ -170,7 +152,7 @@ if __name__ == "__main__":
     log_output_folder = sys.argv[3]
     figure_folder = sys.argv[4]
 
-    # Time the execution of the combine_velocities function
+    # Time the execution of the function
     start_time = time.time()
     filter_and_plot_data(folder_path, log_output_folder, output_folder, figure_folder)
     end_time = time.time()

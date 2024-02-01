@@ -1,9 +1,9 @@
 
  VELROT: Velocity field comparison and combination Version 1.01
 
- There are    41 sites in sys file bahrouni_2020.vel
+ There are    42 sites in sys file bahrouni_2020.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  3254 sites in sys file serpelloni_2022.vel
+ There are  3218 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
  There are    38 matching sites in fundamental file velrot.lnk
 S Component North    #    38 WMean  -0.00 WRMS   0.24 mm/yr, NRMS   2.811

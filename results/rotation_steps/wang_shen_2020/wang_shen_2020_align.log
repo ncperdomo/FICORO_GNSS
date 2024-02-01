@@ -1,16 +1,16 @@
 
  VELROT: Velocity field comparison and combination Version 1.01
 
- There are  3214 sites in sys file wang_shen_2020.vel
+ There are  3184 sites in sys file wang_shen_2020.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  3254 sites in sys file serpelloni_2022.vel
+ There are  3218 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are   100 matching sites in fundamental file velrot.lnk
-S Component North    #   100 WMean   0.02 WRMS   0.45 mm/yr, NRMS   2.312
-S Component North    #   100 WMean   0.02 WRMS   0.45 mm/yr, NRMS   2.312
-S Component East     #   100 WMean  -0.01 WRMS   0.52 mm/yr, NRMS   2.748
-S Component East     #   100 WMean  -0.01 WRMS   0.52 mm/yr, NRMS   2.748
-S Component Up       #   100 WMean   0.25 WRMS   2.45 mm/yr, NRMS   0.797
-S Component Up       #   100 WMean   0.25 WRMS   2.45 mm/yr, NRMS   0.797
-S Component Horz     #   100 WMean   0.01 WRMS   0.48 mm/yr, NRMS   2.539
-S Component Horz     #   100 WMean   0.01 WRMS   0.48 mm/yr, NRMS   2.539
+ There are    99 matching sites in fundamental file velrot.lnk
+S Component North    #    99 WMean   0.02 WRMS   0.45 mm/yr, NRMS   2.323
+S Component North    #    99 WMean   0.02 WRMS   0.45 mm/yr, NRMS   2.323
+S Component East     #    99 WMean  -0.01 WRMS   0.52 mm/yr, NRMS   2.761
+S Component East     #    99 WMean  -0.01 WRMS   0.52 mm/yr, NRMS   2.761
+S Component Up       #    99 WMean   0.23 WRMS   2.44 mm/yr, NRMS   0.796
+S Component Up       #    99 WMean   0.23 WRMS   2.44 mm/yr, NRMS   0.796
+S Component Horz     #    99 WMean   0.01 WRMS   0.48 mm/yr, NRMS   2.552
+S Component Horz     #    99 WMean   0.01 WRMS   0.48 mm/yr, NRMS   2.552
