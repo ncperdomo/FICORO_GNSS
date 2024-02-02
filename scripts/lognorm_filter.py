@@ -78,7 +78,7 @@ def filter_and_plot_data(folder_path, log_output_folder, output_folder, figure_f
         # Save the stations with uncertainties larger than the 99th percentile to a CSV file
         log_output_file = os.path.join(log_output_folder, f'{file_name}.csv')
         combined_stations_higher_than_99.to_csv(log_output_file, sep=' ', index=False)
-        print(f"Sites with uncertainties larger than 99th percentile saved: {log_output_file}")
+        print(f"Sites excluded: {log_output_file}")
 
         # Save the filtered data to a CSV file
         output_file = os.path.join(output_folder, f'{file_name}.csv')
