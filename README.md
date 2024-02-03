@@ -14,7 +14,7 @@ The methodology implemented in the code combines some of the approaches by previ
 
 ## 2) Overview of the code 
 
-This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** and an input folder titled `raw_input`. Within the `raw_input` folder, you'll find the input velocity fields stored as column-formatted text files with the `.raw` extension. To facilitate data processing, there's a `scripts` folder containing additional Python scripts designed for filtering, rotating and combining GNSS velocity fields. If you need to manually remove outliers from the data, you can utilize the `manual_filter` folder, which houses a CSV file that enables you to define specific geographic coordinates (latitude and longitude) and corresponding radii (in kilometers) for the removal of outliers from the combined velocity fields in diferent reference frames. To provide clarity, the folder structure is organized as follows:
+This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** and an input folder titled `raw_input`. Within the `raw_input` folder, you'll find the input velocity fields stored as column-formatted text files with the `.raw` extension. To facilitate data processing, there's a `scripts` folder containing additional Python scripts designed for filtering, rotating and combining GNSS velocity fields. If you need to manually remove outliers from the data, you can utilize the `manual_filter` folder, which houses a CSV file that enables you to define specific geographic coordinates (latitude and longitude) and corresponding radii (in kilometers) for the removal of outliers from the combined velocity fields in different reference frames. To provide clarity, the folder structure is organized as follows:
 
 <pre>
 📦FICORO_GNSS
@@ -77,7 +77,7 @@ This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** an
 
 2. **Filtering by uncertainty distribution:** Analyse the lognormal distribution of velocity uncertainties, excluding stations that fall outside the 99 percentile in the East and North velocity uncertainty components.
 
-3. **Z-score Filtering:** Remove stations if velocity magnitudes in the East and North velocity components diverge over 2 sigma from the mean, considering a radius of 20 km. Additionally, the code allows applying less stringent filtering criteria (n sigma) based on the name of the input file, allowing for a customizable approach to data filtering.
+3. **Z-score Filtering:** Remove stations if velocity magnitudes in the East and North velocity components diverge over 2 sigma from the mean, considering a radius of 20 km. Additionally, the code allows applying geographic-based stringency levels (n-sigma), allowing for a customizable approach to data filtering.
 
 4. **Velocity field alignment to a common reference frame:** Implement a least squares approach to align all the data sets to a reference velocity field using a 6-parameter Helmert transformation (3 translations and 3 rotations), leveraging on repeated stations in both the input and reference data sets.
 
@@ -98,7 +98,7 @@ This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** an
 
 		4. Save the combined velocity field data and plot velocity maps.
 
-7. **Manual filtering**: Remove outliers based on geographical coordinates and radii, generating cleaned data files and logs of removed stations. The script uses parallel processing to handle multiple input velocity fields in diferent reference frames efficiently. 
+7. **Manual filtering**: Remove outliers based on geographical coordinates and radii, generating cleaned data files and logs of removed stations. The script uses parallel processing to handle multiple input velocity fields in different reference frames efficiently. 
 
 ---
 
@@ -355,7 +355,7 @@ Step 7 involves the combination of GNSS velocity fields for each reference frame
 ---
 #### Step 8: Manual filtering of outliers
 
-In this step, multiple velocity fields in diferent reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a space-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in the folder `./results/combined_velocities/manual_filter/`.
+In this step, multiple velocity fields in different reference frames are filtered in parellel, applying user-defined filtering based on coordinates and radii. The user can edit the filtering criteria file `./manual_filter/filter_criteria.csv`, which is a space-separated CSV with columns center_lon (in degrees), center_lat (in degrees), radius (in kilometers). Stations located within the specified radius around the coordinate provided will be excluded from the final combined velocity field. Clean data and log files listing removed stations are saved in the folder `./results/combined_velocities/manual_filter/`.
 
 ---
 #### Step 9: Plot combined velocity field in different reference frames

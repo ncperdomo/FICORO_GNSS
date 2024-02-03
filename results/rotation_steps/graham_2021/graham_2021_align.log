@@ -5,12 +5,12 @@
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
  There are  3218 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are   175 matching sites in fundamental file velrot.lnk
-S Component North    #   175 WMean  -0.01 WRMS   0.57 mm/yr, NRMS   1.455
-S Component North    #   175 WMean  -0.01 WRMS   0.57 mm/yr, NRMS   1.455
-S Component East     #   175 WMean   0.00 WRMS   0.61 mm/yr, NRMS   1.428
-S Component East     #   175 WMean   0.00 WRMS   0.61 mm/yr, NRMS   1.428
-S Component Up       #   175 WMean  -0.36 WRMS   2.53 mm/yr, NRMS   0.826
-S Component Up       #   175 WMean  -0.36 WRMS   2.53 mm/yr, NRMS   0.826
-S Component Horz     #   175 WMean  -0.00 WRMS   0.59 mm/yr, NRMS   1.441
-S Component Horz     #   175 WMean  -0.00 WRMS   0.59 mm/yr, NRMS   1.441
+ There are   152 matching sites in fundamental file velrot.lnk
+S Component North    #   152 WMean  -0.01 WRMS   0.58 mm/yr, NRMS   1.495
+S Component North    #   152 WMean  -0.01 WRMS   0.58 mm/yr, NRMS   1.495
+S Component East     #   152 WMean   0.00 WRMS   0.61 mm/yr, NRMS   1.460
+S Component East     #   152 WMean   0.00 WRMS   0.61 mm/yr, NRMS   1.460
+S Component Up       #   152 WMean  -0.16 WRMS   2.46 mm/yr, NRMS   0.805
+S Component Up       #   152 WMean  -0.16 WRMS   2.46 mm/yr, NRMS   0.805
+S Component Horz     #   152 WMean  -0.01 WRMS   0.60 mm/yr, NRMS   1.477
+S Component Horz     #   152 WMean  -0.01 WRMS   0.60 mm/yr, NRMS   1.477

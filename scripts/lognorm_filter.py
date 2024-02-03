@@ -159,4 +159,5 @@ if __name__ == "__main__":
 
     # Calculate and print the elapsed time
     elapsed_time = end_time - start_time
+    print(f"----------------------------------------------------------------------------------")
     print("Time taken to run lognorm_filter.py: {:.2f} seconds".format(elapsed_time))
