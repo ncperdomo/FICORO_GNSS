@@ -17,13 +17,13 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
 
         # Set the region and projection of the map
         #fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg') # Only Euromediterranean and Middle East regions
-        fig.basemap(region=[-20, 125, 5, 60], projection='M15c', frame='afg') # Entire Alpine-Himalayan belt
+        fig.basemap(region=[-20, 125, 5, 60], projection='M15c', frame='af') # Entire Alpine-Himalayan belt
 
         # Create a custom color palette for the relief shading
         pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
 
         # Add shaded topography with transparency
-        fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=90, nan_transparent=True)
+        fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=20) # nan_transparent=True results in error in the latest GMT version
 
         # Add coastlines
         fig.coast(water='white', borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
