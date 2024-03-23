@@ -17,7 +17,7 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
 
         # Set the region and projection of the map
         #fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg') # Only Euromediterranean and Middle East regions
-        fig.basemap(region=[-20, 125, 5, 60], projection='M15c', frame='af') # Entire Alpine-Himalayan belt
+        fig.basemap(region=[-20, 125, 5, 60], projection='M20c', frame='af') # Entire Alpine-Himalayan belt
 
         # Create a custom color palette for the relief shading
         pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
@@ -78,7 +78,7 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
 
         # Add scale bar
         with pygmt.config(FONT_ANNOT_PRIMARY='8p', FONT_LABEL='8p'):
-            fig.basemap(map_scale="JBR+o-1.6c/-0.8c+c0+w1000k+f+lkm")
+            fig.basemap(map_scale="JBR+o-9c/-0.8c+c0+w1000k+f+lkm")
 
         # Get the base file name without extension
         base_name = os.path.splitext(os.path.basename(file_name))[0]
