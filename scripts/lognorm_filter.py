@@ -104,6 +104,12 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     x_n_sig = np.linspace(n_sig_values.min(), n_sig_values.max(), 100)
     y_n_sig = lognorm.pdf(x_n_sig, *n_sig_params)
 
+    # Calculate the median of the E.sig values
+    e_sig_median = np.mean(df['E.sig'].dropna())
+
+    # Calculate the median of the N.sig values
+    n_sig_median = np.mean(df['N.sig'].dropna())
+
     # Create two subplots in one figure
     fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10, 4))
 
@@ -113,6 +119,7 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     normalized_y_e_sig = y_e_sig * len(e_sig_values) * bin_width_e_sig
     axs[0].plot(x_e_sig, normalized_y_e_sig, 'r-', label='Lognormal Fit')
     axs[0].axvline(e_sig_99th, color='g', linestyle='--', label=f'99%: {e_sig_99th:.2f}')
+    axs[0].axvline(e_sig_median, color='orange', linestyle='--', label=f'Mean: {e_sig_median:.2f}')
     axs[0].set_title(f'{file_name}: East Velocity Uncertainty')
     axs[0].set_xlabel('Uncertainty')
     axs[0].set_ylabel('Count')
@@ -124,6 +131,7 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     normalized_y_n_sig = y_n_sig * len(n_sig_values) * bin_width_n_sig
     axs[1].plot(x_n_sig, normalized_y_n_sig, 'r-', label='Lognormal Fit')
     axs[1].axvline(n_sig_99th, color='g', linestyle='--', label=f'99%: {n_sig_99th:.2f}')
+    axs[1].axvline(n_sig_median, color='orange', linestyle='--', label=f'Mean: {n_sig_median:.2f}')
     axs[1].set_title(f'{file_name}: North Velocity Uncertainty')
     axs[1].set_xlabel('Uncertainty')
     axs[1].set_ylabel('Count')
