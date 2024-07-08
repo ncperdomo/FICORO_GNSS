@@ -80,10 +80,42 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         with pygmt.config(FONT_ANNOT_PRIMARY='8p', FONT_LABEL='8p'):
             fig.basemap(map_scale="JBR+o-9c/-0.8c+c0+w1000k+f+lkm")
 
+        # Add scale vectors to the plot
+        # Define origin of the scale vectors
+        scale_origin_lon = 68  # Longitude of the scale vector origin
+        scale_origin_lat = 16  # Latitude of the scale vector origin
+
+        # Define scale vectors (30 mm/yr normalized appropriately)
+        scale_vector_length = 30  # in mm/yr, this will be normalized
+
+        # Calculate the normalized length for the scale vectors
+        normalized_scale_length = (scale_vector_length - vel_mag.min()) / (vel_mag.max() - vel_mag.min())
+
+        scale_vectors = [
+            [scale_origin_lon, scale_origin_lat, 0, normalized_scale_length],  # Eastward vector
+            [scale_origin_lon, scale_origin_lat, 90, normalized_scale_length]  # Northward vector
+        ]
+
+        # Plot the scale vectors
+        fig.plot(
+            style='v0.1c+e+n0.15',
+            data=scale_vectors,
+            fill='red',
+            pen='black',
+            label='Accepted vel.',
+        )
+
+        # Annotate the scale vectors
+        fig.text(
+            text=f'{scale_vector_length} mm/yr',
+            x=scale_origin_lon - 5,
+            y=scale_origin_lat,
+            font='7p,black'
+        )
+
         # Get the base file name without extension
         base_name = os.path.splitext(os.path.basename(file_name))[0]
 
-        
         print(f"Plotting GPS velocities for {base_name} data set")
 
         # Show the figure
