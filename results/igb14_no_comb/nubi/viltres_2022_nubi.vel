@@ -1,4 +1,4 @@
-* CVFRAME: Vel file viltres_2022_igb14.vel rotated from ITRF14   to NUBI_I14
+* CVFRAME: Vel file viltres_2022_igb14.vel rotated from ITRF14   to USER    
 * Rotation Pole     0.027400   -0.170400    0.203700 deg/Myr
 *  Long.       Lat.        E & N Rate     E & N Adj.    E & N +-  RHO       H Rate  H adj.   +- SITE
 *  (deg)      (deg)         (mm/yr)      (mm/yr)      (mm/yr)               (mm/yr)

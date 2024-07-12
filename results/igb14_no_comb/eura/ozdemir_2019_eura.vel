@@ -1,4 +1,4 @@
-* CVFRAME: Vel file ozdemir_2019_igb14.vel rotated from ITRF14   to EURA_I14
+* CVFRAME: Vel file ozdemir_2019_igb14.vel rotated from ITRF14   to USER    
 * Rotation Pole    -0.023500   -0.147600    0.214000 deg/Myr
 *  Long.       Lat.        E & N Rate     E & N Adj.    E & N +-  RHO       H Rate  H adj.   +- SITE
 *  (deg)      (deg)         (mm/yr)      (mm/yr)      (mm/yr)               (mm/yr)
