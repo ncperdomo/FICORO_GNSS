@@ -93,7 +93,7 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
                     for j in range(len(df_lognorm)):
                         x_start_lognorm = lon_lognorm[j]
                         y_start_lognorm = lat_lognorm[j]
-                        direction_degrees_lognorm = 90 - np.arctan2(n_vel_lognorm[j], e_vel_lognorm[j]) * 180 / np.pi
+                        direction_degrees_lognorm = np.degrees(np.arctan2(n_vel_lognorm[j], e_vel_lognorm[j])) #90 - np.arctan2(n_vel_lognorm[j], e_vel_lognorm[j]) * 180 / np.pi
                         length_lognorm = normalized_vel_mag[j] * 0.5
 
                         vectors_lognorm.append([x_start_lognorm, y_start_lognorm, direction_degrees_lognorm, length_lognorm])
@@ -129,7 +129,7 @@ def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figur
                     for k in range(len(df_coherence)):
                         x_start_coherence = lon_coherence[k]
                         y_start_coherence = lat_coherence[k]
-                        direction_degrees_coherence = 90 - np.arctan2(n_vel_coherence[k], e_vel_coherence[k]) * 180 / np.pi
+                        direction_degrees_coherence = np.degrees(np.arctan2(n_vel_coherence[k], e_vel_coherence[k])) #90 - np.arctan2(n_vel_coherence[k], e_vel_coherence[k]) * 180 / np.pi
                         length_coherence = normalized_vel_mag[k] * 0.5
 
                         vectors_coherence.append([x_start_coherence, y_start_coherence, direction_degrees_coherence, length_coherence])
