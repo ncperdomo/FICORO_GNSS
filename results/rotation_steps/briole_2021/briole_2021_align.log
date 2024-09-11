@@ -3,14 +3,14 @@
 
  There are   319 sites in sys file briole_2021.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  3218 sites in sys file serpelloni_2022.vel
+ There are  3252 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are   188 matching sites in fundamental file velrot.lnk
-S Component North    #   188 WMean  -0.00 WRMS   0.62 mm/yr, NRMS   1.798
-S Component North    #   188 WMean  -0.00 WRMS   0.62 mm/yr, NRMS   1.798
-S Component East     #   188 WMean   0.00 WRMS   1.17 mm/yr, NRMS   3.735
-S Component East     #   188 WMean   0.00 WRMS   1.17 mm/yr, NRMS   3.735
-S Component Up       #   188 WMean   3.15 WRMS   7.69 mm/yr, NRMS   7.731
-S Component Up       #   188 WMean   3.15 WRMS   7.69 mm/yr, NRMS   7.731
-S Component Horz     #   188 WMean  -0.00 WRMS   0.96 mm/yr, NRMS   2.931
-S Component Horz     #   188 WMean  -0.00 WRMS   0.96 mm/yr, NRMS   2.931
+ There are   192 matching sites in fundamental file velrot.lnk
+S Component North    #   192 WMean  -0.00 WRMS   0.63 mm/yr, NRMS   1.823
+S Component North    #   192 WMean  -0.00 WRMS   0.63 mm/yr, NRMS   1.823
+S Component East     #   192 WMean   0.00 WRMS   1.17 mm/yr, NRMS   3.711
+S Component East     #   192 WMean   0.00 WRMS   1.17 mm/yr, NRMS   3.711
+S Component Up       #   192 WMean   3.24 WRMS   7.78 mm/yr, NRMS   7.769
+S Component Up       #   192 WMean   3.24 WRMS   7.78 mm/yr, NRMS   7.769
+S Component Horz     #   192 WMean  -0.00 WRMS   0.96 mm/yr, NRMS   2.924
+S Component Horz     #   192 WMean  -0.00 WRMS   0.96 mm/yr, NRMS   2.924

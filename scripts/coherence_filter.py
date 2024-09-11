@@ -31,7 +31,7 @@ def get_region_stringency(lon, lat, regions):
             return region['sigma']
     return default_sigma
 
-def filter_gps_velocities(file_name, radius=20, geo_strict=False, regions=[]):
+def filter_gps_velocities(file_name, radius=20, geo_strict=False, regions=[], special_case_file=None):
     # Read the CSV file as a data frame, skipping the header row
     df = pd.read_csv(file_name, sep=' ', skiprows=1, header=None)
     df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
@@ -75,6 +75,9 @@ def filter_gps_velocities(file_name, radius=20, geo_strict=False, regions=[]):
     output_clean_coherence = './results/output_coherence_analysis'
     os.makedirs(output_clean_coherence, exist_ok=True)
 
+    if special_case_file in file_name:
+        filtered_stations = set() # Do not remove any stations for special case files where we want to preserve all stations
+
     # Save excluded stations
     filtered_df = df.loc[list(filtered_stations)].drop_duplicates()
     removed_lines_file = os.path.join(output_folder, f'{os.path.splitext(os.path.basename(file_name))[0]}.csv')
@@ -92,20 +95,21 @@ def filter_gps_velocities(file_name, radius=20, geo_strict=False, regions=[]):
     text = f"\n----------------------------------------------------------------------------------\nNumber of stations removed for {os.path.basename(file_name)}: {num_removed} / {num_total} ({percentage_removed:.2f}%)\nSites excluded: {removed_lines_file}\nFiltered velocities: {included_lines_file}"
     print(text)
 
-def parallel_filter_gps_velocities(folder_path, radius=20, geo_strict=False, regions=[]):
+def parallel_filter_gps_velocities(folder_path, radius=20, geo_strict=False, regions=[], special_case_file=None):
     # Find all CSV files in the folder
     file_names = glob.glob(os.path.join(folder_path, '*.csv'))
     # Create a ThreadPoolExecutor with the maximum number of worker threads
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit the filtering tasks for each file to the executor
-        results = [executor.submit(filter_gps_velocities, file_name, radius, geo_strict, regions) for file_name in file_names]
+        results = [executor.submit(filter_gps_velocities, file_name, radius, geo_strict, regions, special_case_file) for file_name in file_names]
         concurrent.futures.wait(results)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process GNSS data with optional geographic stringency.')
+    parser = argparse.ArgumentParser(description='Process GNSS data with optional geographic stringency and special case handling.')
     parser.add_argument('folder_path', help='Path to the input folder containing CSV files')
     parser.add_argument('--geo_strict', action='store_true', help='Enable geographic stringency levels based on regions defined in a JSON file')
     parser.add_argument('--regions_json', type=str, help='Path to the JSON file with region definitions', default='')
+    parser.add_argument('--special_case_file', type=str, help='File name to handle specially (e.g., skip filtering)', default='')
 
     args = parser.parse_args()
 
@@ -120,7 +124,7 @@ if __name__ == "__main__":
     
     # Time the execution of the parallel_filter_gps_velocities function
     start_time = time.time()
-    parallel_filter_gps_velocities(args.folder_path, geo_strict=args.geo_strict, regions=regions)
+    parallel_filter_gps_velocities(args.folder_path, geo_strict=args.geo_strict, regions=regions, special_case_file=args.special_case_file)
     end_time = time.time()
     print(f"----------------------------------------------------------------------------------")
     print(f"Time taken: {end_time - start_time:.2f} seconds")

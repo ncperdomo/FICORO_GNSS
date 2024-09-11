@@ -3,7 +3,7 @@
 
  There are   210 sites in sys file euref_ch8.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  3218 sites in sys file serpelloni_2022.vel
+ There are  3252 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
  There are   245 matching sites in fundamental file velrot.lnk
 S Component North    #   245 WMean  -0.02 WRMS   1.75 mm/yr, NRMS  15.574

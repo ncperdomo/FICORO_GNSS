@@ -197,7 +197,6 @@ def combine_velocities(input_folder, combined_folder):
         df['Ref'] = basename
         dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
-    # combined_df[(combined_df['Lon'] >= -15) & (combined_df['Lon'] <= 70) & (combined_df['Lat'] >= 5) & (combined_df['Lat'] <= 60)]
 
     # Get the coordinates of all stations in the combined velocity field as a numpy array of shape (n, 2) where n is the number of stations 
     stations = combined_df[['Lon', 'Lat']].values

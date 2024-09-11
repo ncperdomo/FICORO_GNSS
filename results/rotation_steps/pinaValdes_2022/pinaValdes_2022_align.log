@@ -3,14 +3,14 @@
 
  There are  4618 sites in sys file pinaValdes_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  3218 sites in sys file serpelloni_2022.vel
+ There are  3252 sites in sys file serpelloni_2022.vel
  Rotating from NONE       to NONE       using rotation vector     0.000000    0.000000    0.000000 degs/Myrs
- There are  2871 matching sites in fundamental file velrot.lnk
-S Component North    #  2871 WMean  -0.01 WRMS   0.38 mm/yr, NRMS   1.946
-S Component North    #  2871 WMean  -0.01 WRMS   0.38 mm/yr, NRMS   1.946
-S Component East     #  2871 WMean   0.00 WRMS   0.36 mm/yr, NRMS   1.823
-S Component East     #  2871 WMean   0.00 WRMS   0.36 mm/yr, NRMS   1.823
-S Component Up       #  2871 WMean  -0.14 WRMS   0.87 mm/yr, NRMS   1.209
-S Component Up       #  2871 WMean  -0.14 WRMS   0.87 mm/yr, NRMS   1.209
-S Component Horz     #  2871 WMean  -0.00 WRMS   0.37 mm/yr, NRMS   1.885
-S Component Horz     #  2871 WMean  -0.00 WRMS   0.37 mm/yr, NRMS   1.885
+ There are  2889 matching sites in fundamental file velrot.lnk
+S Component North    #  2889 WMean  -0.01 WRMS   0.38 mm/yr, NRMS   1.946
+S Component North    #  2889 WMean  -0.01 WRMS   0.38 mm/yr, NRMS   1.946
+S Component East     #  2889 WMean   0.00 WRMS   0.36 mm/yr, NRMS   1.820
+S Component East     #  2889 WMean   0.00 WRMS   0.36 mm/yr, NRMS   1.820
+S Component Up       #  2889 WMean  -0.14 WRMS   0.87 mm/yr, NRMS   1.209
+S Component Up       #  2889 WMean  -0.14 WRMS   0.87 mm/yr, NRMS   1.209
+S Component Horz     #  2889 WMean  -0.00 WRMS   0.37 mm/yr, NRMS   1.884
+S Component Horz     #  2889 WMean  -0.00 WRMS   0.37 mm/yr, NRMS   1.884

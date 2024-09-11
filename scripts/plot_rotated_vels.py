@@ -29,16 +29,16 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         fig.coast(water='white', borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
 
         # Read the CSV file from output_coherence_analysis folder
-        df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None)
-        df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
+        #df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None)
+        #df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
+        usecols = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat'] # I do this to ignore potential extra columns in the CSV file
+        df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None, usecols=range(len(usecols)))
+        df.columns = usecols
 
         # Check if the data frame is empty
         if df.shape[0] == 0:
             print(f"Skipping empty file: {file_name}")
             continue
-        
-        # Filter GPS sites outside the specified region
-        #df[(df['Lon'] >= -15) & (df['Lon'] <= 70) & (df['Lat'] >= 5) & (df['Lat'] <= 60)]
         
         # Extract the coordinates, E and N velocity components, and E and N sig from the data frame
         lon = df['Lon']
@@ -51,7 +51,7 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         # Calculate the velocity magnitude for scaling
         vel_mag = np.sqrt(e_vel**2 + n_vel**2)
 
-        # Normalize the velocity magnitude to the range [0, 1]
+        # Normalise the velocity magnitude to the range [0, 1]
         normalized_vel_mag = (vel_mag - vel_mag.min()) / (vel_mag.max() - vel_mag.min())
 
         # Create a list to store the vectors
@@ -85,10 +85,10 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         scale_origin_lon = 68  # Longitude of the scale vector origin
         scale_origin_lat = 16  # Latitude of the scale vector origin
 
-        # Define scale vectors (30 mm/yr normalized appropriately)
-        scale_vector_length = 30  # in mm/yr, this will be normalized
+        # Define scale vectors (30 mm/yr normalised appropriately)
+        scale_vector_length = 30  # in mm/yr, this will be normalised
 
-        # Calculate the normalized length for the scale vectors
+        # Calculate the normalised length for the scale vectors
         normalized_scale_length = (scale_vector_length - vel_mag.min()) / (vel_mag.max() - vel_mag.min())
 
         scale_vectors = [

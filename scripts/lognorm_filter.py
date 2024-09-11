@@ -4,7 +4,7 @@ import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import lognorm
+from scipy.stats import lognorm, normaltest
 import re
 import time
 import warnings
@@ -51,9 +51,18 @@ def filter_and_plot_data(folder_path, log_output_folder, output_folder, figure_f
 
     # Iterate over each data frame
     for i, df in enumerate(dfs):
+        # Make sure to take only positive values from E.sig and N.sig columns
+        # So here I'm getting the indices of positive values in E.sig and N.sig columns
+        positive_e_sig = df['E.sig'] > 0
+        positive_n_sig = df['N.sig'] > 0
+
+        # Fit a lognormal distribution to the positive E.sig and N.sig columns
+        e_sig_params = lognorm.fit(df['E.sig'][positive_e_sig].dropna())
+        n_sig_params = lognorm.fit(df['N.sig'][positive_n_sig].dropna())
+
         # Fit a lognormal distribution to E.sig and N.sig columns
-        e_sig_params = lognorm.fit(df['E.sig'].dropna())
-        n_sig_params = lognorm.fit(df['N.sig'].dropna())
+        #e_sig_params = lognorm.fit(df['E.sig'].dropna())
+        #n_sig_params = lognorm.fit(df['N.sig'].dropna())
 
         # Calculate the 99th percentile of the fitted lognormal distributions
         e_sig_99th = lognorm.ppf(0.99, *e_sig_params)
