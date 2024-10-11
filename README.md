@@ -1,6 +1,6 @@
 
 # FICORO_GNSS
-## An open-access Python software package for filtering, combining and rotating GNSS Velocity Fields
+## An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields
 
 1. [Introduction](#1-introduction)
 2. [Overview of the code](#2-overview-of-the-code)
@@ -14,12 +14,12 @@
 
 The expansion of regional GNSS networks and the availability of published velocities have significantly enhanced our understanding of active tectonics. However, despite these advancements, few attempts have been made to integrate the available GNSS velocities at continental and global scales (e.g., [Nocquet J.M, 2012](https://doi.org/10.1016/j.tecto.2012.03.037); [Kreemer et al., 2014]( https://doi.org/10.1002/2014GC005407); [Graham et al., 2018](https://doi.org/10.1029/2017GC007391); [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451); [Zeng et al., (2022)](https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/6/3121/617675/GPS-Velocity-Field-of-the-Western-United-States)), and integrating multiple GNSS velocity fields remains challenging due to the lack of standardised methods for filtering and harmonising these data sets.
 
-FICORO_GNSS is a Python-based suite of tools designed to filter, combine, and rotate multiple GNSS velocity fields into a comprehensive and self-consistent dataset. Each input GNSS velocity file adheres to the GAMIT velocity file format, containing 13 columns: 
+FICORO_GNSS is a Python-based suite of tools designed to filter, combine, and rotate multiple GNSS velocity fields into a comprehensive and self-consistent dataset. Each input GNSS velocity file adheres to the GAMIT\GLOBK velocity file format, containing 13 columns: 
 ```
 Lon Lat E.vel N.vel E.adj N.adj E.sig N.sig Corr U.vel U.adj U.sig Stat 
 ```
 
-The methodology implemented in the code combines some of the approaches by previous research on aggregated GNSS velocity fields, including [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451) and [Zeng et al., (2022)](https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/6/3121/617675/GPS-Velocity-Field-of-the-Western-United-States).
+The methodology implemented in the code combines some of the approaches by previous research on combined GNSS velocity fields, including [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451) and [Zeng et al., (2022)](https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/6/3121/617675/GPS-Velocity-Field-of-the-Western-United-States).
 
 ---
 
@@ -31,7 +31,7 @@ The methodology implemented in the code combines some of the approaches by previ
 
 This software comprises a main Jupyter notebook named **`FICORO_GNSS.ipynb`** and an input folder titled `raw_input`. Within the `raw_input` folder, you'll find the input velocity fields stored as column-formatted text files with the `.raw` extension. To facilitate data processing, there's a `scripts` folder containing additional Python scripts designed for filtering and combining GNSS velocity fields. If you need to manually remove outliers from the data, you can utilise the `manual_filter` folder, which houses a CSV file that enables you to define specific geographic coordinates (latitude and longitude) and corresponding radii (in kilometers) for the removal of outliers from the combined velocity field. 
 
-The folder structure is organized as follows:
+The folder structure is organised as follows:
 
 <pre>
 📦FICORO_GNSS
@@ -101,13 +101,13 @@ The folder structure is organized as follows:
 
 1. **Filtering stations affected by postseismic transient motions:** Remove stations identified as being affected by postseismic transient motions
 
-2. **Filtering by uncertainty distribution:** GNSS stations with velocity uncertainties exceeding the 99th percentile of the scaled log-normal distribution are removed from input velocity fields.
+2. **Filtering by uncertainty distribution:** GNSS stations with velocity uncertainties exceeding the 99th percentile of the scaled log-normal distribution are removed from input velocity fields, following the approach by [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451).
 
-3. **Filtering based on spatial coherence of velocity magnitudes:** Remove stations if velocity magnitudes in the East and North velocity components diverge over 2 sigma from the mean, considering a radius of 20 km. Additionally, the code allows applying geographic-based stringency levels (n-sigma), allowing for a customizable approach to data filtering.
+3. **Filtering based on spatial coherence of velocity magnitudes:** Remove stations if velocity magnitudes in the East and North velocity components diverge over 2 sigma from the mean, considering a radius of 20 km. Additionally, the code allows applying geographic-based stringency levels (n-sigma), allowing for a customisable approach to data filtering.
 
 4. **Velocity field alignment to a common reference frame:** Implement a least squares approach to align all the data sets to a reference velocity field using a 6-parameter Helmert transformation (3 translations and 3 rotations), leveraging on repeated stations in both the input and reference data sets.
 
-5. **Velocity field rotation:** Rotate velocity fields to different reference frames using published Euler vectors.
+5. **Velocity field rotation:** Rotate velocity fields to different reference frames using published Euler poles.
 
 6. **Filtering by velocity magnitude and azimuthal direction:** Implement the Interquartile Range (IQR) method to detect outliers, omitting solutions displaying disparities in magnitude, azimuthal direction, or both. The thresholds for outlier detection are set as: 	
 
@@ -116,7 +116,7 @@ The folder structure is organized as follows:
 
 7. **Velocity field combination:** Estimate median velocities and uncertainties for the East and North velocity components at collocated stations.
 
-8. **Manual filtering**: Remove outliers based on geographical coordinates and radii, generating cleaned data files and logs of removed stations. The script uses parallel processing to handle multiple input velocity fields in different reference frames efficiently. 
+8. **Manual filtering**: Remove outliers based on geographical coordinates and radii, generating cleaned data sets and logs of removed stations. 
 
 9. **Scaling velocity uncertainties:** Horizontal velocity uncertainties are adjusted to match the same percentile in a subjectively chosen target log-normal distribution, following the approach by [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451).
 
@@ -130,7 +130,7 @@ The folder structure is organized as follows:
 
 - **Python:** Version 3.7 or higher
 - **Python Libraries:** numpy, scipy, matplotlib, pygmt, jupyter, pandas, os, subprocess, datetime, sys, glob, json, time, concurrent, argparse, itertools
-- **GAMIT/GLOBK:** Required for current FICORO_GNSS version ([GAMIT/GLOBK documentation](http://geoweb.mit.edu/gg/))
+- **GAMIT/GLOBK:** Required for FICORO_GNSS v1.0.0 ([see GAMIT/GLOBK documentation](http://geoweb.mit.edu/gg/))
 
 ### Steps
 
@@ -165,7 +165,7 @@ The folder structure is organized as follows:
 ---
 ## 4) Example outputs:
 
-FICORO_GNSS includes a set of input velocity fields for the Alpine-Himalayan region. Run the main Jupyter notebook to generate maps similar to the ones shown below:
+**FICORO_GNSS** includes a set of input velocity fields for the Alpine-Himalayan region. By running the main Jupyter notebook, you can filter, rotate, and combine these datasets to generate publication-quality maps using [PyGMT](https://www.pygmt.org/). Below are examples of the outputs you can expect:
 
 ![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.jpg)
 
@@ -178,15 +178,14 @@ FICORO_GNSS includes a set of input velocity fields for the Alpine-Himalayan reg
 ## 5) How to cite:
 I am committed to promoting reproducibility and open data access in science. Please cite FICORO_GNSS as follows:
 
-- If you use, adapt, modify or get inspired by the filtering and combination methods implemented in FICORO_GNSS:
+- If you use, adapt, modify, or are inspired by the filtering and combination methods implemented in FICORO_GNSS, or if you use the combined velocity field for the Alpine-Himalayan Belt provided with FICORO_GNSS: 
+
 ```
-N. Castro-Perdomo (2024). FICORO_GNSS: An open-access Python software package for filtering, combining and rotating GNSS Velocity Fields. Zenodo. DOI: [DOI]
-```
-- If you use the combined velocity field for the Alpine-Himalayan Belt distributed with FICORO_GNSS: 
-```
-N. Castro-Perdomo et al., (2024). Strain Rates along the Alpine-Himalayan Belt from a New Comprehensive GNSS Velocity Field. DOI: [DOI]
+Castro-Perdomo N. (2024). FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields. Zenodo. DOI: 
 ```
 
 ## 6) License
 
 This project is licensed under the MIT License.
+
+---
