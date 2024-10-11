@@ -107,10 +107,10 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     n_sig_params = lognorm.fit(n_sig_values)
 
     # Generate data points for best lognormal fit
-    x_e_sig = np.linspace(e_sig_values.min(), e_sig_values.max(), 100)
+    x_e_sig = np.linspace(e_sig_values.min(), e_sig_values.max(), 1000)
     y_e_sig = lognorm.pdf(x_e_sig, *e_sig_params)
 
-    x_n_sig = np.linspace(n_sig_values.min(), n_sig_values.max(), 100)
+    x_n_sig = np.linspace(n_sig_values.min(), n_sig_values.max(), 1000)
     y_n_sig = lognorm.pdf(x_n_sig, *n_sig_params)
 
     # Calculate the median of the E.sig values
@@ -130,9 +130,12 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     axs[0].axvline(e_sig_99th, color='g', linestyle='--', label=f'99%: {e_sig_99th:.2f}')
     axs[0].axvline(e_sig_median, color='orange', linestyle='--', label=f'Mean: {e_sig_median:.2f}')
     axs[0].set_title(f'{file_name}: East Velocity Uncertainty')
-    axs[0].set_xlabel('Uncertainty')
-    axs[0].set_ylabel('Count')
+    axs[0].set_xlabel('East velocity uncertainty (mm/yr)')
+    axs[0].set_ylabel('Counts')
     axs[0].legend()
+
+    # set axis limits
+    axs[0].set_xlim([-0.5, 6])
 
     # Plot histogram and lognormal fit in the second subplot (N.sig)
     counts_n_sig, bins_n_sig, _ = axs[1].hist(n_sig_values, bins=20, density=False, alpha=0.7)
@@ -142,9 +145,12 @@ def plot_subfigures(df, file_name, figure_folder, e_sig_99th, n_sig_99th):
     axs[1].axvline(n_sig_99th, color='g', linestyle='--', label=f'99%: {n_sig_99th:.2f}')
     axs[1].axvline(n_sig_median, color='orange', linestyle='--', label=f'Mean: {n_sig_median:.2f}')
     axs[1].set_title(f'{file_name}: North Velocity Uncertainty')
-    axs[1].set_xlabel('Uncertainty')
-    axs[1].set_ylabel('Count')
+    axs[1].set_xlabel('North velocity uncertainty (mm/yr)')
+    axs[1].set_ylabel('Counts')
     axs[1].legend()
+
+    # set axis limits
+    axs[1].set_xlim([-0.5, 6])
 
     plt.tight_layout()
 
