@@ -1,6 +1,11 @@
 
 # FICORO_GNSS
-## An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields
+
+[![Language](https://img.shields.io/badge/python-3%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/ncperdomo/FICORO_GNSS/blob/main/LICENSE)
+[![DOI](https://zenodo.org/badge/682602490.svg)](https://doi.org/10.5281/zenodo.13921189)
+
+## An open-source Python software package for filtering, combining and rotating GNSS velocity fields
 
 1. [Introduction](#1-introduction)
 2. [Overview of the code](#2-overview-of-the-code)
@@ -181,7 +186,7 @@ I am committed to promoting reproducibility and open data access in science. Ple
 - If you use, adapt, modify, or are inspired by the filtering and combination methods implemented in FICORO_GNSS, or if you use the combined velocity field for the Alpine-Himalayan Belt provided with FICORO_GNSS: 
 
 ```
-Castro-Perdomo N. (2024). FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields. Zenodo. DOI: 
+Castro-Perdomo N. (2024). FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields. Zenodo. DOI: 10.5281/zenodo.13921189
 ```
 
 ## 6) License
