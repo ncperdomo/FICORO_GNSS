@@ -65,7 +65,7 @@ def plot_uncertainty_distributions(original_uncertainties, scaled_uncertainties,
     
     # Set x-axis limit to a maximum of 5.5 and leave some space for the ligure label on the top left (for the manuscript)
     plt.xlim(-0.2, 5.5)
-    plt.ylim(0, 3600)
+    plt.ylim(0, 4200)
     
     # Dynamically change the xlabel based on the component
     if component == 'E.sig':
