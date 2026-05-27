@@ -45,9 +45,13 @@ The folder structure is organised as follows:
   ┣ 📂scripts
  ┃ ┣ 📜coherence_filter.py
  ┃ ┣ 📜combine_vel.py
+ ┃ ┣ 📜frame_registry.py 
  ┃ ┣ 📜lognorm_filter.py
  ┃ ┣ 📜plot_maps_filtering.py
  ┃ ┣ 📜plot_rotated_vels.py
+ ┃ ┣ 📜pycvframe.py.py
+ ┃ ┣ 📜pyvelrot.py
+ ┃ ┗ 📜uncertainty_filter_verticals.py
  ┃ ┗ 📜uncertainty_scaling_combined.py
  ┣ 📂manual_filter
  ┃ ┗ 📜filter_criteria.csv
@@ -171,11 +175,15 @@ The folder structure is organised as follows:
 
 **FICORO_GNSS** includes a set of input velocity fields for the Alpine-Himalayan region. By running the main Jupyter notebook, you can filter, rotate, and combine these datasets to generate publication-quality maps using [PyGMT](https://www.pygmt.org/). Below are examples of the outputs you can expect:
 
-![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.jpg)
+![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.png)
 
 ---
 
-![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.jpg)
+![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.png)
+
+---
+
+![Vertical velocity field](Readme_figures/verticals.png)
 
 ---
 
