@@ -41,8 +41,8 @@ The folder structure is organised as follows:
 <pre>
 📦FICORO_GNSS
  ┣ 📜FICORO_GNSS.ipynb
- ┗ 📜README.md
-  ┣ 📂scripts
+ ┣ 📜README.md
+ ┣ 📂scripts
  ┃ ┣ 📜coherence_filter.py
  ┃ ┣ 📜combine_vel.py
  ┃ ┣ 📜frame_registry.py 
