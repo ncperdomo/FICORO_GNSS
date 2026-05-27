@@ -1,0 +1,61 @@
+cff-version: 1.2.0
+message: "If you use FICORO_GNSS or the associated Alpine-Himalayan GNSS velocity field, please cite the relevant references below."
+title: "FICORO_GNSS"
+version: "v2.0"
+doi: 10.5281/zenodo.13921189
+date-released: 2024-10-01
+url: "https://doi.org/10.5281/zenodo.13921189"
+
+authors:
+  - family-names: "Castro-Perdomo"
+    given-names: "Nicolás"
+
+abstract: >
+  FICORO_GNSS is an open-source Python software package for filtering,
+  combining, and rotating GNSS velocity fields.
+
+keywords:
+  - GNSS
+  - geodesy
+  - tectonics
+  - crustal deformation
+  - strain rates
+  - velocity fields
+
+license: MIT 
+
+preferred-citation:
+  type: article
+  authors:
+    - family-names: "Castro-Perdomo"
+      given-names: "N."
+    - family-names: "Jónsson"
+      given-names: "S."
+    - family-names: "Klinger"
+      given-names: "Y."
+    - family-names: "Masson"
+      given-names: "F."
+    - family-names: "Becker"
+      given-names: "T. W."
+    - family-names: "Johnson"
+      given-names: "K."
+  title: "Strain Rates Along the Alpine-Himalayan Belt From a Comprehensive GNSS Velocity Field"
+  journal: "Journal of Geophysical Research: Solid Earth"
+  year: 2025
+  volume: 130
+  issue: 12
+  doi: "10.1029/2025JB031738"
+  url: "https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2025JB031738"
+
+references:
+  - type: software
+    authors:
+      - family-names: "Castro-Perdomo"
+        given-names: "Nicolás"
+    title: "FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS velocity fields"
+    version: "v1.0.0"
+    year: 2024
+    doi: "10.5281/zenodo.13921189"
+    publisher:
+      name: "Zenodo"
+    url: "https://doi.org/10.5281/zenodo.13921189"
