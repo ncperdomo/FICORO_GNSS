@@ -28,7 +28,7 @@ The methodology implemented in the code combines some of the approaches by previ
 
 ---
 
-**Note:** This code currently relies on the installation of GAMIT/GLOBK, as it utilises the Fortran codes VELROT and CVFRAME included with GAMIT/GLOBK to align and rotate velocity fields. In upcoming releases, I plan to provide Python scripts that will eliminate the need for GAMIT/GLOBK. Until then, please ensure that GAMIT/GLOBK is installed before running this code. Considering that VELROT limits the maximum number of sites allowed in the input files to 4096, I increased the default value in the Velrot module to 10,000, thus allowing to align input velocity fields with a larger number of stations.
+**Note:** Earlier versions of this software (v1.x) depended on the installation of GAMIT/GLOBK, as they used the Fortran programs `VELROT` and `CVFRAME` included in the [GAMIT/GLOBK package](https://geoweb.mit.edu/gg/) for velocity field alignment and rotation. The current release (v2.x) replaces these dependencies with fully integrated Python implementations ([PyVelrot](https://github.com/ncperdomo/PyVelrot) and [PyCvframe](https://github.com/ncperdomo/PyCvframe)), eliminating the need to install GAMIT/GLOBK while preserving the original alignment and rotation functionality. 
 
 ---
 
@@ -135,7 +135,6 @@ The folder structure is organised as follows:
 
 - **Python:** Version 3.7 or higher
 - **Python Libraries:** numpy, scipy, matplotlib, pygmt, jupyter, pandas, os, subprocess, datetime, sys, glob, json, time, concurrent, argparse, itertools
-- **GAMIT/GLOBK:** Required for FICORO_GNSS v1.0.0 ([see GAMIT/GLOBK documentation](http://geoweb.mit.edu/gg/))
 
 ### Steps
 
@@ -180,18 +179,28 @@ The folder structure is organised as follows:
 
 ---
 
-## 5) How to cite:
-I am committed to promoting reproducibility and open data access in science. Please cite FICORO_GNSS as follows:
+## 5) How to Cite
 
-- If you use, adapt, modify, or are inspired by the filtering and combination methods implemented in FICORO_GNSS, or if you use the combined velocity field for the Alpine-Himalayan Belt provided with FICORO_GNSS: 
+I am committed to promoting reproducibility and open access in geodetic and tectonic research. Please cite FICORO_GNSS according to how the software or associated data products are used in your work.
 
+### A) If you use the FICORO_GNSS software
+
+Please cite the Zenodo software release if you:
+
+- use the filtering, combination, alignment, or rotation workflows implemented in FICORO_GNSS,
+- adapt or modify the code,
+- incorporate parts of the methodology into another workflow, or
+- use the software for scientific analyses or derived products.
+
+**Citation:**
+
+```text
+Castro-Perdomo, N. (2024). FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS velocity fields (Version v1.0.0). Zenodo. https://doi.org/10.5281/zenodo.13921189
 ```
-Castro-Perdomo N. (2024). FICORO_GNSS: An open-source Python software package for filtering, combining and rotating GNSS Velocity Fields. Retrieved from https://doi.org/10.5281/zenodo.13921189. DOI: 10.5281/zenodo.13921189
-```
 
--**BibTex citation:**
+**BibTeX:**
 
-```
+```bibtex
 @software{castro_perdomo_ficoro_gnss_2024,
   author       = {Nicolás Castro-Perdomo},
   title        = {{FICORO\_GNSS: An open-source Python software package for filtering, combining and rotating GNSS velocity fields}},
@@ -200,6 +209,42 @@ Castro-Perdomo N. (2024). FICORO_GNSS: An open-source Python software package fo
   version      = {v1.0.0},
   doi          = {10.5281/zenodo.13921189},
   url          = {https://doi.org/10.5281/zenodo.13921189}
+}
+```
+
+---
+
+### B) If you use the combined Alpine–Himalayan GNSS velocity field distributed with FICORO_GNSS
+
+Please cite the accompanying *JGR: Solid Earth* [article](https://doi.org/10.1029/2025JB031738) if you use:
+
+- the combined GNSS velocity fields provided with this repository,
+- derived strain-rate products,
+- regional subsets of the compiled velocity database, or
+- analyses based on the Alpine–Himalayan GNSS compilation.
+
+**Citation:**
+
+```text
+Castro-Perdomo, N., Jónsson, S., Klinger, Y., Masson, F., Becker, T. W., & Johnson, K. (2025). Strain rates along the Alpine-Himalayan Belt from a comprehensive GNSS velocity field. Journal of Geophysical Research: Solid Earth, 130(12), e2025JB031738. https://doi.org/10.1029/2025JB031738
+```
+
+**BibTeX:**
+
+```bibtex
+@article{castro_perdomo_2025_JGR,
+  author = {Castro-Perdomo, N. and Jónsson, S. and Klinger, Y. and Masson, F. and Becker, T. W. and Johnson, K.},
+  title = {Strain Rates Along the Alpine-Himalayan Belt From a Comprehensive GNSS Velocity Field},
+  journal = {Journal of Geophysical Research: Solid Earth},
+  volume = {130},
+  number = {12},
+  pages = {e2025JB031738},
+  keywords = {strain rates, active tectonics, crustal deformation, Alpine-Himalayan belt, GNSS, velocity field},
+  doi = {https://doi.org/10.1029/2025JB031738},
+  url = {https://agupubs.onlinelibrary.wiley.com/doi/abs/10.1029/2025JB031738},
+  eprint = {https://agupubs.onlinelibrary.wiley.com/doi/pdf/10.1029/2025JB031738},
+  note = {e2025JB031738 2025JB031738},
+  year = {2025}
 }
 ```
 

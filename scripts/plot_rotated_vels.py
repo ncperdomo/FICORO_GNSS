@@ -32,7 +32,7 @@ def plot_gps_velocity_fields(folder_path, figure_folder):
         #df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None)
         #df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
         usecols = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat'] # I do this to ignore potential extra columns in the CSV file
-        df = pd.read_csv(file_name, sep='\s+', skiprows=1, header=None, usecols=range(len(usecols)))
+        df = pd.read_csv(file_name, sep=r'\s+', skiprows=1, header=None, usecols=range(len(usecols)))
         df.columns = usecols
 
         # Check if the data frame is empty

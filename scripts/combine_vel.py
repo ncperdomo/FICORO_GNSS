@@ -9,6 +9,7 @@ of solutions per GNSS station."""
 """ Import necessary modules """
 import os
 import sys
+from unittest import result
 import pandas as pd
 from itertools import product
 import numpy as np
@@ -188,89 +189,80 @@ def combine_velocities(input_folder, combined_folder):
     dfs = []
     for file_path in file_paths:
         basename = os.path.splitext(os.path.basename(file_path))[0]
-        # If basename ends with igb14 set skiprows to 0, otherwise set skiprows to 4, because the igb14 files have no header
         if basename.endswith('igb14'):
-            df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=0)
+            df = pd.read_csv(os.path.join(input_folder, file_path), sep=r"\s+", header=None, skiprows=0)
         else:
-            df = pd.read_csv(os.path.join(input_folder, file_path), delim_whitespace=True, header=None, skiprows=4)
+            df = pd.read_csv(os.path.join(input_folder, file_path), sep=r"\s+", header=None, skiprows=4)
         df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
         df['Ref'] = basename
         dfs.append(df)
     combined_df = pd.concat(dfs, ignore_index=True)
 
-    # Get the coordinates of all stations in the combined velocity field as a numpy array of shape (n, 2) where n is the number of stations 
+    # Get the coordinates of all stations in the combined velocity field
     stations = combined_df[['Lon', 'Lat']].values
-    
-    # Use the distance dictionary instead of a separation matrix to reduce the time complexity of the algorithm
+
+    # Use the distance dictionary to find close station pairs
     distance_dict = create_distance_dict(stations)
-    close_stations = [(i, j) for i, neighbours in distance_dict.items() for j in neighbours] # List of tuples of close station pairs
+    close_stations = [(i, j) for i, neighbours in distance_dict.items() for j in neighbours]
 
-    # Group close stations together based on the distance dictionary
-    close_stations_groups = make_groups(close_stations) # List of lists of close stations
-
-    # Check the length of the close_stations_groups list
+    # Group close stations together
+    close_stations_groups = make_groups(close_stations)
     print("Number of groups of close stations: {}".format(len(close_stations_groups)))
 
-    # Create a folder called statistics inside the combined folder path to store the statistics of the combined velocity fields
+    # Create statistics folder
     statistics_folder = os.path.join(combined_folder, "statistics")
     os.makedirs(statistics_folder, exist_ok=True)
 
-    # Create a DataFrame to store the combined velocity fields. Only if basename ends with eura
-    if basename.endswith('eura'):
-        aggregated_df = pd.DataFrame()
+    # Initialise aggregated_df and statistics_df unconditionally to avoid NameError
+    aggregated_df = pd.DataFrame()
+    statistics_df = pd.DataFrame(columns=['Lon', 'Lat', 'Stat', 'Num'])
 
-    # Create a DataFrame to store statistics of the combined velocity field. Only if basename ends with eura
-    if basename.endswith('eura'):
-        statistics_df = pd.DataFrame(columns=['Lon', 'Lat', 'Stat', 'Num'])
-    
     for group in close_stations_groups:
-        # Check if there is more than one station in the group
         if len(group) > 1:
-            # Extract the relevant data for this group of stations
-            group_df = combined_df.loc[group]
-            group_df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat','Ref']
+            # Extract a copy to avoid SettingWithCopyWarning
+            group_df = combined_df.loc[group].copy()
 
-            # Save the group_df to the aggregated_df DataFrame to be exported later as a CSV file for debugging purposes. Only if basename ends with eura
+            # Save to aggregated_df for debugging if any row belongs to eura
             if group_df['Ref'].iloc[0].endswith('eura'):
                 aggregated_df = pd.concat([aggregated_df, group_df], ignore_index=True)
-            
-            # Step 1: Remove outliers based on magnitude and azimuthal direction differences
-            # For simplicity, we only consider the 'E.vel' and 'N.vel' components
-            group_df[['E.vel', 'N.vel', 'U.vel']], outliers = remove_outliers(group_df[['E.vel', 'N.vel', 'U.vel']])
 
-            # Step 2: Compute the median of horzontal and vertical velocities separately
-            # For the vertical component, we only include non-zero values in the median calculation. 
+            # Step 1: Remove outliers
+            result, outliers = remove_outliers(group_df[['E.vel', 'N.vel', 'U.vel']])
+
+            if isinstance(result, pd.Series):
+                # All points were outliers — broadcast the single median to all rows
+                group_df[['E.vel', 'N.vel', 'U.vel']] = result.to_numpy()
+            else:
+                # Normal case — update only the surviving (non-outlier) rows
+                group_df.loc[result.index, ['E.vel', 'N.vel', 'U.vel']] = result.values
+
+            # Step 2: Compute median velocities on the updated group_df
             median_velocities = group_df[['E.vel', 'N.vel']].median().round(2)
-            median_velocities['U.vel'] = group_df[group_df['U.vel'] != 0]['U.vel'].median().round(2)
-            # If all vertical velocities are zero (i.e., the input velocity fields did not estimate verticals), return NaN as the median.
-            if group_df[group_df['U.vel'] != 0]['U.vel'].empty:
+            non_zero_u = group_df[group_df['U.vel'] != 0]['U.vel']
+            if non_zero_u.empty:
                 print("Warning: All vertical velocities are zero. Assigning NaN as the median.")
                 median_velocities['U.vel'] = np.nan
-            
-            # Step 3: Compute median uncertainties for each velocity component
-            uncertainties = group_df[['E.sig', 'N.sig', 'U.sig']].median()
-            uncertainties = uncertainties.round(2).astype('float')
-            
-            # Pick the first station in the group
-            chosen_station_idx = 0
-            chosen_station = group_df.iloc[chosen_station_idx]
+            else:
+                median_velocities['U.vel'] = non_zero_u.median().round(2)
 
-            # Update the group_df with the combined values
-            group_df[['E.vel', 'N.vel', 'U.vel']] = median_velocities
-            group_df[['E.sig', 'N.sig', 'U.sig']] = uncertainties
+            # Step 3: Compute median uncertainties
+            uncertainties = group_df[['E.sig', 'N.sig', 'U.sig']].median().round(2).astype('float')
+
+            # Pick the first station in the group
+            chosen_station = group_df.iloc[0]
+
+            # Update all rows in group_df with combined values
+            group_df[['E.vel', 'N.vel', 'U.vel']] = median_velocities.to_numpy()
+            group_df[['E.sig', 'N.sig', 'U.sig']] = uncertainties.to_numpy()
             group_df['Lon'] = chosen_station['Lon'].round(5)
             group_df['Lat'] = chosen_station['Lat'].round(5)
-
-            # Keep only the chosen station in the 'Stat' column
             group_df['Stat'] = chosen_station['Stat']
-            
-            # Assign 'E.adj', 'N.adj', 'U.adj', and 'Corr' values from the chosen station to the group DataFrame
             group_df['E.adj'] = chosen_station['E.adj'].round(2)
             group_df['N.adj'] = chosen_station['N.adj'].round(2)
             group_df['U.adj'] = chosen_station['U.adj'].round(2)
             group_df['Corr'] = chosen_station['Corr'].round(3)
 
-            # Save the number of stations in the group to the statistics_df DataFrame if basename ends with eura
+            # Record statistics for eura reference frame
             if chosen_station['Ref'].endswith('eura'):
                 statistics_to_add = pd.DataFrame({
                     'Lon': [chosen_station['Lon'].round(5)],
@@ -280,22 +272,19 @@ def combine_velocities(input_folder, combined_folder):
                 })
                 statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
 
-            # Merge the processed group_df back into the combined_df
+            # Write the processed group back into combined_df
             combined_df.loc[group] = group_df
-            
-            # Additional debugging: Check if any NaN values exist in the merged DataFrame
+
+            # Debugging: check for unexpected NaN values
             if combined_df.isnull().values.any():
                 print("Warning: NaN values found in the merged DataFrame.")
                 print(combined_df[combined_df.isnull().any(axis=1)])
 
         else:
-            # If there is only one station in the group, just use it as is
+            # Single station — use as is
             chosen_station = combined_df.loc[group[0]]
-
-            # Keep only the chosen station in the 'Stat' column
             combined_df.loc[group, 'Stat'] = chosen_station['Stat']
 
-            # Save the number of stations in the group [1] to the statistics_df DataFrame if basename ends with eura
             if chosen_station['Ref'].endswith('eura'):
                 statistics_to_add = pd.DataFrame({
                     'Lon': [chosen_station['Lon'].round(5)],
@@ -305,31 +294,26 @@ def combine_velocities(input_folder, combined_folder):
                 })
                 statistics_df = pd.concat([statistics_df, statistics_to_add], ignore_index=True)
 
-    # Drop duplicates (keeping the first occurrence) from the combined_df based on 'Lon' and 'Lat'
+    # Drop duplicates keeping first occurrence
     combined_df.drop_duplicates(subset=['Lon', 'Lat'], keep='first', inplace=True)
 
-    # Drop the 'Ref' column from the combined dataframe
+    # Drop the Ref column
     combined_df.drop(columns=['Ref'], inplace=True)
 
-    # Save the combined_df to a CSV file
-    # If basename ends with igb14, set the output filename to combined_vel_igb14.csv, 
-    # otherwise set based on the last 4 characters of the input folder name
+    # Determine output filename
     if basename.endswith('igb14'):
         output_filename = "combined_vel_igb14.csv"
     else:
         output_filename = "combined_vel_" + os.path.basename(input_folder)[-4:] + ".csv"
-    
-    # Save the combined velocity field to a CSV file
+
     combined_df.to_csv(os.path.join(combined_folder, output_filename), sep=' ', index=False)
 
-    if chosen_station['Ref'].endswith('eura'):
-        # Save groupped stations to a CSV file for debugging purposes
-        group_df_file_path = os.path.join(statistics_folder, "grouped_stations.csv")
-        aggregated_df.to_csv(group_df_file_path, sep=',', index=False)
+    # Save debugging and statistics files if eura reference frame was processed
+    if not aggregated_df.empty:
+        aggregated_df.to_csv(os.path.join(statistics_folder, "grouped_stations.csv"), sep=',', index=False)
 
-        # Save the statistics_df to a CSV file
-        statistics_df_file_path = os.path.join(statistics_folder, "site_statistics.csv")
-        statistics_df.to_csv(statistics_df_file_path, sep=',', index=False)
+    if not statistics_df.empty:
+        statistics_df.to_csv(os.path.join(statistics_folder, "site_statistics.csv"), sep=',', index=False)
 
 if __name__ == "__main__":
     # Check if the correct number of command-line arguments is provided

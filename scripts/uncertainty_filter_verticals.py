@@ -18,7 +18,7 @@ class UncertaintyFilterVerticals:
         Reads the vertical velocity file and returns a DataFrame.
         """
         col_names = ['Lon', 'Lat', 'U.vel', 'U.sig', 'Stat']
-        self.data = pd.read_csv(self.input_file, delim_whitespace=True, header=None, names=col_names)
+        self.data = pd.read_csv(self.input_file, sep=r'\s+', header=None, names=col_names)
         return self.data
 
     def plot_uncertainty_distribution(self, save_fig=True):
