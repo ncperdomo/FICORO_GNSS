@@ -14,7 +14,6 @@
 5. [How to cite](#5-how-to-cite)
 6. [License](#6-license)
 
----
 ## 1) Introduction
 
 The expansion of regional GNSS networks and the availability of published velocities have significantly enhanced our understanding of active tectonics. However, despite these advancements, few attempts have been made to integrate the available GNSS velocities at continental and global scales (e.g., [Nocquet J.M, 2012](https://doi.org/10.1016/j.tecto.2012.03.037); [Kreemer et al., 2014]( https://doi.org/10.1002/2014GC005407); [Graham et al., 2018](https://doi.org/10.1029/2017GC007391); [Piña-Valdez., et al., (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021JB023451); [Zeng et al., (2022)](https://pubs.geoscienceworld.org/ssa/srl/article-abstract/93/6/3121/617675/GPS-Velocity-Field-of-the-Western-United-States)), and integrating multiple GNSS velocity fields remains challenging due to the lack of standardised methods for filtering and harmonising these data sets.
@@ -29,8 +28,6 @@ The methodology implemented in the code combines some of the approaches by previ
 ---
 
 **Note:** Earlier versions of this software (v1.x) depended on the installation of GAMIT/GLOBK, as they used the Fortran programs `VELROT` and `CVFRAME` included in the [GAMIT/GLOBK package](https://geoweb.mit.edu/gg/) for velocity field alignment and rotation. The current release (v2.x) replaces these dependencies with fully integrated Python implementations ([PyVelrot](https://github.com/ncperdomo/PyVelrot) and [PyCvframe](https://github.com/ncperdomo/PyCvframe)), eliminating the need to install GAMIT/GLOBK while preserving the original alignment and rotation functionality. 
-
----
 
 ## 2) Overview of the code
 
@@ -131,8 +128,6 @@ The folder structure is organised as follows:
 
 10. **Final filtering based on uncertainty distribution:** Stations with velocity uncertainties exceeding the 99th percentile of the scaled log-normal distribution are removed from the final combined velocity field.
 
----
-
 ## 3) Usage
 
 ### Prerequisites
@@ -170,22 +165,11 @@ The folder structure is organised as follows:
 - Manual Filtering: Use the `manual_filter/` folder to define specific geographic coordinates and radii for outlier removal. Modify the provided CSV file to specify the criteria.
 
 
----
 ## 4) Example outputs:
 
 **FICORO_GNSS** includes a set of input velocity fields for the Alpine-Himalayan region. By running the main Jupyter notebook, you can filter, rotate, and combine these datasets to generate publication-quality maps using [PyGMT](https://www.pygmt.org/). Below are examples of the outputs you can expect:
 
-![Number of independent velocity estimates at each GNSS station](Readme_figures/num_estimates.png)
-
----
-
 ![Horizontal and vertical velocity field in the Mediterranean and Middle East areas](Readme_figures/gps_map.png)
-
----
-
-![Vertical velocity field](Readme_figures/verticals.png)
-
----
 
 ## 5) How to Cite
 
