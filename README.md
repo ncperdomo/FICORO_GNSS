@@ -4,6 +4,7 @@
 [![Language](https://img.shields.io/badge/python-3%2B-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://github.com/ncperdomo/FICORO_GNSS/blob/main/LICENSE)
 [![DOI](https://zenodo.org/badge/682602490.svg)](https://doi.org/10.5281/zenodo.13921189)
+[![nbviewer](https://img.shields.io/badge/render-nbviewer-orange.svg)]([https://nbviewer.org](https://nbviewer.org/github/ncperdomo/FICORO_GNSS/blob/main/FICORO_GNSS.ipynb))
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/ncperdomo/FICORO_GNSS_binder.git/main?urlpath=%2Fdoc%2Ftree%2FFICORO_GNSS.ipynb)
 
 ## An open-source Python software package for filtering, combining and rotating GNSS velocity fields
