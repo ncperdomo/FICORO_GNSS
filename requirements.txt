@@ -5,3 +5,4 @@ matplotlib>=3.7
 pygmt>=0.12
 geopy>=2.0
 scikit-learn>=1.0
+psutil>=5.9
