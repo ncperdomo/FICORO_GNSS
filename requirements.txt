@@ -1,6 +1,7 @@
-numpy==2.4.4
-pandas==3.0.2
-scipy==1.17.1
-matplotlib==3.10.8
-pygmt==0.18.0
-geopy==2.4.1
+numpy>=2.0
+pandas>=2.0
+scipy>=1.10
+matplotlib>=3.7
+pygmt>=0.12
+geopy>=2.0
+scikit-learn>=1.0
