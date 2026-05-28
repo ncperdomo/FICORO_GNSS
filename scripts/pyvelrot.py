@@ -50,7 +50,7 @@ HUGE_DIAGONAL = 1.0e14
 
 
 # ---------------------------------------------------------------------------
-# Coordinate utilities
+# Coordinate utilities — scalar (public API, unchanged)
 # ---------------------------------------------------------------------------
 
 def geod_to_xyz(lat_deg: float, lon_deg: float, height: float = 0.0) -> np.ndarray:
@@ -134,6 +134,62 @@ def cross_product(omega: np.ndarray, pos: np.ndarray) -> Tuple[np.ndarray, float
 
 
 # ---------------------------------------------------------------------------
+# Coordinate utilities — batch (internal; operate on (N,3) arrays)
+# ---------------------------------------------------------------------------
+
+def _geod_to_xyz_batch(lats_deg: np.ndarray,
+                       lons_deg: np.ndarray) -> np.ndarray:
+    """Geodetic (N lat °, N lon °) → ECEF XYZ (N, 3) at height = 0."""
+    lat = np.radians(lats_deg)
+    lon = np.radians(lons_deg)
+    sin_lat = np.sin(lat)
+    cos_lat = np.cos(lat)
+    N = EARTH_RAD / np.sqrt(1.0 - EARTH_E2 * sin_lat**2)
+    X = N * cos_lat * np.cos(lon)
+    Y = N * cos_lat * np.sin(lon)
+    Z = N * (1.0 - EARTH_E2) * sin_lat
+    return np.column_stack([X, Y, Z])
+
+
+def _xyz_to_geod_batch(xyz_arr: np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """ECEF XYZ (N, 3) → (lats °, lons °, heights m) via iterative Bowring."""
+    X, Y, Z = xyz_arr[:, 0], xyz_arr[:, 1], xyz_arr[:, 2]
+    lon = np.arctan2(Y, X)
+    p = np.sqrt(X**2 + Y**2)
+    lat = np.arctan2(Z, p * (1.0 - EARTH_E2))
+    for _ in range(5):
+        sin_lat = np.sin(lat)
+        N = EARTH_RAD / np.sqrt(1.0 - EARTH_E2 * sin_lat**2)
+        height = p / np.cos(lat) - N
+        lat = np.arctan2(Z, p * (1.0 - EARTH_E2 * N / (N + height)))
+    return np.degrees(lat), np.degrees(lon), height
+
+
+def _rotation_matrix_neu_batch(lats_deg: np.ndarray,
+                                lons_deg: np.ndarray) -> np.ndarray:
+    """
+    Batch rotation matrices R[i] such that V_NEU[i] = R[i] @ V_XYZ[i].
+    Returns (N, 3, 3).
+    """
+    lat = np.radians(lats_deg)
+    lon = np.radians(lons_deg)
+    sl, cl = np.sin(lat), np.cos(lat)
+    sn, cn = np.sin(lon), np.cos(lon)
+    n = len(lat)
+    R = np.zeros((n, 3, 3))
+    R[:, 0, 0] = -sl * cn
+    R[:, 0, 1] = -sl * sn
+    R[:, 0, 2] =  cl
+    R[:, 1, 0] = -sn
+    R[:, 1, 1] =  cn
+    # R[:, 1, 2] = 0 (North-Z of East row)
+    R[:, 2, 0] =  cl * cn
+    R[:, 2, 1] =  cl * sn
+    R[:, 2, 2] =  sl
+    return R
+
+
+# ---------------------------------------------------------------------------
 # Frame lookup — delegates to frame_registry
 # ---------------------------------------------------------------------------
 
@@ -144,7 +200,7 @@ except ImportError:
 
 
 # ---------------------------------------------------------------------------
-# Velocity file I/O
+# Velocity file I/O — vectorized
 # ---------------------------------------------------------------------------
 
 def read_vel_file(filename: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
@@ -169,9 +225,9 @@ def read_vel_file(filename: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
     Column layout: lon lat ve vn de dn se sn rho vu du su name
     Velocities are stored internally in m/yr, covariances in (m/yr)².
     """
-    coords_list = []
-    covs_list = []
-    names_list = []
+    coords_list: List[np.ndarray] = []
+    covs_list:   List[np.ndarray] = []
+    names_list:  List[str]        = []
 
     with open(filename, "r") as fh:
         for line in fh:
@@ -189,27 +245,20 @@ def read_vel_file(filename: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
                 continue
 
             lon, lat = vals[0], vals[1]
-            ve, vn, de, dn = vals[2], vals[3], vals[4], vals[5]
-            se, sn, rho    = vals[6], vals[7], vals[8]
-            vu, du, su     = vals[9], vals[10], vals[11]
-            site = tokens[12] if len(tokens) > 12 else ""
+            ve, vn    = vals[2], vals[3]
+            se, sn, rho = vals[6], vals[7], vals[8]
+            vu, su      = vals[9], vals[11]
 
-            # Convert geodetic position to XYZ (height = 0)
             pos_xyz = geod_to_xyz(lat, lon)
-
-            # Velocity in NEU (m/yr): NEU order = [N, E, U]
             vel_neu = np.array([vn / 1000.0, ve / 1000.0, vu / 1000.0])
+            vel_xyz, _, _ = rotate_geod(vel_neu, "NEU", "XYZ", pos_xyz)
 
-            # Rotate to XYZ velocity
-            vel_xyz, _, R = rotate_geod(vel_neu, "NEU", "XYZ", pos_xyz)
-
-            # NEU covariance in (m/yr)²  (index 0=N, 1=E, 2=U)
             cov = np.zeros((3, 3))
-            cov[0, 0] = sn**2 * 1.0e-6        # var_N
-            cov[1, 1] = se**2 * 1.0e-6        # var_E
+            cov[0, 0] = sn**2 * 1.0e-6
+            cov[1, 1] = se**2 * 1.0e-6
             cov[0, 1] = rho * sn * se * 1.0e-6
             cov[1, 0] = cov[0, 1]
-            cov[2, 2] = su**2 * 1.0e-6        # var_U
+            cov[2, 2] = su**2 * 1.0e-6
 
             coord = np.zeros((3, 2))
             coord[:, 0] = pos_xyz
@@ -217,18 +266,16 @@ def read_vel_file(filename: str) -> Tuple[np.ndarray, np.ndarray, List[str]]:
 
             coords_list.append(coord)
             covs_list.append(cov)
-            names_list.append(site)
+            names_list.append(tokens[12] if len(tokens) > 12 else "")
 
     if not coords_list:
         return np.zeros((0, 3, 2)), np.zeros((0, 3, 3)), []
 
-    return (np.array(coords_list),
-            np.array(covs_list),
-            names_list)
+    return (np.array(coords_list), np.array(covs_list), names_list)
 
 
 # ---------------------------------------------------------------------------
-# get_parts: design matrix
+# get_parts: design matrix (unchanged — used in _output_sum and _transframe)
 # ---------------------------------------------------------------------------
 
 def get_parts(coord_xyz: np.ndarray, rot_matrix: np.ndarray,
@@ -287,7 +334,7 @@ def get_parts(coord_xyz: np.ndarray, rot_matrix: np.ndarray,
 
 
 # ---------------------------------------------------------------------------
-# var_comp: variance propagation  A C A^T
+# var_comp: variance propagation  A C A^T (unchanged)
 # ---------------------------------------------------------------------------
 
 def var_comp(A_neu: np.ndarray, C: np.ndarray) -> np.ndarray:
@@ -457,7 +504,7 @@ class PyVelrot:
         return n
 
     # -----------------------------------------------------------------------
-    # Frame update
+    # Frame update — vectorized
     # -----------------------------------------------------------------------
 
     def _frame_update(self, which: int, sys_frame: str, out_frm: str,
@@ -475,17 +522,13 @@ class PyVelrot:
         if np.sum(np.abs(rot_vec)) < 1.0e-10:
             return
 
-        if which == 1:
-            coords = self.sys1_coord
-        else:
-            coords = self.sys2_coord
+        coords = self.sys1_coord if which == 1 else self.sys2_coord
 
-        for i in range(len(coords)):
-            xyz_vel, _ = cross_product(rot_vec, coords[i, :, 0])
-            coords[i, :, 1] += xyz_vel
+        # Vectorized: v[i] += rot_vec × pos[i] for all i at once
+        coords[:, :, 1] += np.cross(rot_vec[np.newaxis, :], coords[:, :, 0])
 
     # -----------------------------------------------------------------------
-    # Fundamental sites
+    # Fundamental sites — vectorized pairwise distance
     # -----------------------------------------------------------------------
 
     def _read_fund_sites(self, fund_file: str) -> None:
@@ -511,14 +554,15 @@ class PyVelrot:
                         if len(tokens) >= 2:
                             self.eq_dist = float(tokens[1])
                             self.cp_dist = self.eq_dist
-                        # Build links for all pairs within eq_dist
-                        for j in range(n1):
-                            for k in range(n2):
-                                dl = np.linalg.norm(
-                                    self.sys1_coord[j, :, 0] - self.sys2_coord[k, :, 0]
-                                )
-                                if dl < self.eq_dist:
-                                    links.append((j, k))
+                        # Vectorized pairwise distance: avoid O(N1*N2) Python loop.
+                        # dist2[i,j] = ||pos1[i] - pos2[j]||²  via BLAS dot-product formula.
+                        pos1 = self.sys1_coord[:, :, 0]   # (N1, 3)
+                        pos2 = self.sys2_coord[:, :, 0]   # (N2, 3)
+                        p1sq = np.einsum('ij,ij->i', pos1, pos1)   # (N1,)
+                        p2sq = np.einsum('ij,ij->i', pos2, pos2)   # (N2,)
+                        dist2 = p1sq[:, np.newaxis] + p2sq[np.newaxis, :] - 2.0 * (pos1 @ pos2.T)
+                        j_idx, k_idx = np.where(dist2 < self.eq_dist ** 2)
+                        links = list(zip(j_idx.tolist(), k_idx.tolist()))
 
                     elif kw == "NAMES":
                         # Match all sites by name
@@ -620,21 +664,20 @@ class PyVelrot:
         Mirrors velrot.f subroutine increment_norm.
 
         Uses 2 components if w_U / w_E < HEIGHT_WEIGHT_TOL, else 3.
+        Replaces the original triple Python loop with matrix products.
         """
-        # Decide how many components to use
-        if abs(weights[2] / weights[1]) < HEIGHT_WEIGHT_TOL:
-            num_use = 2
-        else:
-            num_use = 3
+        num_use = 2 if abs(weights[2] / weights[1]) < HEIGHT_WEIGHT_TOL else 3
 
-        for i in range(num_use):
-            for j in range(7):
-                self.bvec[j]         += A_neu[i, j] * dn[i] * weights[i]
-                for k in range(7):
-                    self.norm_eq[j, k] += A_neu[i, j] * weights[i] * A_neu[i, k]
-            self.sum_prefit += dn[i]**2 * weights[i]
-            self.sum_weight += weights[i]
-            self.num_data   += 1
+        d = dn[:num_use]
+        w = weights[:num_use]
+        A = A_neu[:num_use, :]          # (num_use, 7)
+
+        Aw = A * w[:, np.newaxis]       # (num_use, 7)  — A with row weights
+        self.norm_eq    += Aw.T @ A     # (7, 7)  = Aᵀ W A
+        self.bvec       += A.T @ (d * w)  # (7,)    = Aᵀ W d
+        self.sum_prefit += float(np.dot(d * d, w))
+        self.sum_weight += float(w.sum())
+        self.num_data   += num_use
 
     def _transframe(self) -> None:
         """
@@ -721,7 +764,7 @@ class PyVelrot:
         self.rms_fit *= 1000.0
 
     # -----------------------------------------------------------------------
-    # Output summary
+    # Output summary (unchanged — runs only once on 178 sites)
     # -----------------------------------------------------------------------
 
     _PARAM_LABS = ["X-Offset", "Y-Offset", "Z-Offset",
@@ -852,13 +895,18 @@ class PyVelrot:
         the original Fortran, where cov_neu[0,0] (North transform var) is
         added to sys1_cov[1,1] (East slot) and vice versa.  This matches
         the Fortran behaviour exactly.
+
+        Per-site scalar loop kept to guarantee bit-identical FP output:
+        the sqrt→square covariance roundtrip and the sequential dx accumulation
+        both produce site-specific intermediate roundings that batch paths
+        cannot replicate exactly.
         """
         for i in range(len(self.sys1_names)):
             _, loc, R = rotate_geod(self.sys1_coord[i, :, 1], "XYZ", "NEU",
                                     self.sys1_coord[i, :, 0])
             A_neu, A_xyz = get_parts(self.sys1_coord[i, :, 0], R, self.num_parn)
 
-            # Apply transformation in XYZ
+            # Apply transformation in XYZ (accumulate in dx then add once)
             dx = np.zeros(3)
             for k in range(self.num_parn):
                 dx += A_xyz[:, k] * self.trans_parm[k]
@@ -868,9 +916,6 @@ class PyVelrot:
             cov_neu = var_comp(A_neu, self.norm_eq)  # (3,3) in (m/yr)²
 
             # Update covariance (Fortran convention: N↔E swap in transform term)
-            # dsig(2) = sqrt(sys1_cov(2,2,i) + cov_neu(1,1)) * 1000
-            # dsig(1) = sqrt(sys1_cov(1,1,i) + cov_neu(2,2)) * 1000
-            # where index 1=N, 2=E in Fortran → index 0=N, 1=E in Python
             dsig_e = np.sqrt(max(0, self.sys1_cov[i, 1, 1] + cov_neu[0, 0])) * 1000.0
             dsig_n = np.sqrt(max(0, self.sys1_cov[i, 0, 0] + cov_neu[1, 1])) * 1000.0
             dsig_u = np.sqrt(max(0, self.sys1_cov[i, 2, 2] + cov_neu[2, 2])) * 1000.0
@@ -878,15 +923,15 @@ class PyVelrot:
             rho_ne = ((self.sys1_cov[i, 0, 1] + cov_neu[0, 1]) /
                       (dsig_n * dsig_e / 1.0e6))
 
-            self.sys1_cov[i, 1, 1] = dsig_e**2 / 1.0e6   # E variance
-            self.sys1_cov[i, 0, 0] = dsig_n**2 / 1.0e6   # N variance
-            self.sys1_cov[i, 2, 2] = dsig_u**2 / 1.0e6   # U variance
+            self.sys1_cov[i, 1, 1] = dsig_e**2 / 1.0e6
+            self.sys1_cov[i, 0, 0] = dsig_n**2 / 1.0e6
+            self.sys1_cov[i, 2, 2] = dsig_u**2 / 1.0e6
             self.sys1_cov[i, 0, 1] = rho_ne * np.sqrt(
                 self.sys1_cov[i, 0, 0] * self.sys1_cov[i, 1, 1])
             self.sys1_cov[i, 1, 0] = self.sys1_cov[i, 0, 1]
 
     # -----------------------------------------------------------------------
-    # Output transformed velocity field
+    # Output transformed velocity field — vectorized
     # -----------------------------------------------------------------------
 
     def _check_cp(self, ns1: int, ns2: int) -> str:
@@ -895,6 +940,7 @@ class PyVelrot:
         '+' if sys2 site ns2 is within cp_dist of any sys1 site,
         ' ' otherwise.
         Mirrors velrot.f subroutine check_cp.
+        Kept for API compatibility; not called in the hot output path.
         """
         if self.cp_dist <= 0.0:
             return " "
@@ -922,6 +968,23 @@ class PyVelrot:
         Format 520 (sys2):
             a,f10.5,1x,F10.5,1x,6(1x,f7.2),1x,f6.3,2x,3(1x,f7.2), 1x,a8,a1
         """
+        # --- Precompute proximity flags (replaces O(N1*N2) per-site check_cp) --
+        n1 = len(self.sys1_names)
+        n2 = len(self.sys2_names)
+        sys1_sym = np.full(n1, ' ', dtype='U1')
+        sys2_sym = np.full(n2, ' ', dtype='U1')
+
+        if self.cp_dist > 0.0:
+            pos1 = self.sys1_coord[:, :, 0]   # (N1, 3)
+            pos2 = self.sys2_coord[:, :, 0]   # (N2, 3)
+            p1sq = np.einsum('ij,ij->i', pos1, pos1)   # (N1,)
+            p2sq = np.einsum('ij,ij->i', pos2, pos2)   # (N2,)
+            dist2 = (p1sq[:, np.newaxis] + p2sq[np.newaxis, :]
+                     - 2.0 * (pos1 @ pos2.T))           # (N1, N2)
+            cp2 = self.cp_dist ** 2
+            sys1_sym[np.any(dist2 < cp2, axis=1)] = '*'  # sys1 near any sys2
+            sys2_sym[np.any(dist2 < cp2, axis=0)] = '+'  # sys2 near any sys1
+
         fh.write(
             "\n* SYSTEM 1 Velocities transformed to SYSTEM 2 \n"
             "*   Long.       Lat.         E & N Rate      E & N Adj."
@@ -930,7 +993,10 @@ class PyVelrot:
             "       (mm/yr)                 (mm/yr)\n"
         )
 
-        for i in range(len(self.sys1_names)):
+        # Use the same scalar rotate_geod as the original for per-site velocity
+        # conversion — this is bit-identical to the baseline.  The hot path is
+        # already fast because _check_cp is no longer called in the inner loop.
+        for i in range(n1):
             dn, loc_coord, _ = rotate_geod(self.sys1_coord[i, :, 1], "XYZ", "NEU",
                                             self.sys1_coord[i, :, 0])
             dn_mm = dn * 1000.0
@@ -944,18 +1010,15 @@ class PyVelrot:
             rho = (self.sys1_cov[i, 0, 1] /
                    (sn * se / 1.0e6)) if (sn > 0 and se > 0) else 0.0
 
-            sym = self._check_cp(i, -1)
-
             fh.write(
                 f" {lon:10.5f} {lat:10.5f}"
                 f" {dn_mm[1]:7.2f} {dn_mm[0]:7.2f}"
                 f" {dn_mm[1]:7.2f} {dn_mm[0]:7.2f}"
                 f" {se:7.2f} {sn:7.2f}"
                 f" {rho:6.3f}  {dn_mm[2]:7.2f} {dn_mm[2]:7.2f}"
-                f" {su:7.2f} {self.sys1_names[i]:<8s}{sym}\n"
+                f" {su:7.2f} {self.sys1_names[i]:<8s}{sys1_sym[i]}\n"
             )
 
-        # sys2 sites
         fh.write(
             "\n* SYSTEM 2 Velocities except those in SYSTEM 1 \n"
             "*   Long.       Lat.         E & N Rate      E & N Adj."
@@ -966,7 +1029,7 @@ class PyVelrot:
 
         sys1_nameset = set(self.sys1_names)
 
-        for i in range(len(self.sys2_names)):
+        for i in range(n2):
             dn, loc_coord, _ = rotate_geod(self.sys2_coord[i, :, 1], "XYZ", "NEU",
                                             self.sys2_coord[i, :, 0])
             dn_mm = dn * 1000.0
@@ -980,18 +1043,14 @@ class PyVelrot:
             rho = (self.sys2_cov[i, 0, 1] /
                    (sn * se / 1.0e6)) if (sn > 0 and se > 0) else 0.0
 
-            sym = self._check_cp(-1, i)
-
-            # Leading character: '-' if site is also in sys1, ' ' otherwise
             leader = "-" if self.sys2_names[i] in sys1_nameset else " "
-
             fh.write(
                 f"{leader}{lon:10.5f} {lat:10.5f}"
                 f" {dn_mm[1]:7.2f} {dn_mm[0]:7.2f}"
                 f" {dn_mm[1]:7.2f} {dn_mm[0]:7.2f}"
                 f" {se:7.2f} {sn:7.2f}"
                 f" {rho:6.3f}  {dn_mm[2]:7.2f} {dn_mm[2]:7.2f}"
-                f" {su:7.2f} {self.sys2_names[i]:<8s}{sym}\n"
+                f" {su:7.2f} {self.sys2_names[i]:<8s}{sys2_sym[i]}\n"
             )
 
     # -----------------------------------------------------------------------
@@ -1070,5 +1129,48 @@ def main():
            out_file, out_frame, fund_file, h_weight, p_opt)
 
 
+# ---------------------------------------------------------------------------
+# Benchmark
+# ---------------------------------------------------------------------------
+
+def benchmark(n_reps: int = 5) -> None:
+    """
+    Time the full run() on the bundled test data and print results.
+    Call as:  python pyvelrot.py --benchmark
+    """
+    import time, os
+
+    sys1 = "data/reilinger_2006.vel"
+    sys2 = "data/serpelloni_2022.vel"
+    lnk  = "data/velrot.lnk"
+    out  = os.devnull
+
+    # Suppress stdout from velrot itself during timing
+    _stdout = sys.stdout
+    sys.stdout = open(os.devnull, "w")
+
+    times = []
+    for _ in range(n_reps):
+        vr = PyVelrot()
+        t0 = time.perf_counter()
+        vr.run(sys1, "NONE", sys2, "NONE", out, "NONE", lnk, 0, "TR")
+        times.append(time.perf_counter() - t0)
+
+    sys.stdout.close()
+    sys.stdout = _stdout
+
+    times.sort()
+    print(f"\n{'='*55}")
+    print(f"  PyVelrot benchmark  ({n_reps} reps,  N1=429  N2=3252)")
+    print(f"{'='*55}")
+    print(f"  Median  : {np.median(times)*1000:8.1f} ms")
+    print(f"  Min     : {min(times)*1000:8.1f} ms")
+    print(f"  Max     : {max(times)*1000:8.1f} ms")
+    print(f"{'='*55}\n")
+
+
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) > 1 and sys.argv[1] == "--benchmark":
+        benchmark(int(sys.argv[2]) if len(sys.argv) > 2 else 5)
+    else:
+        main()

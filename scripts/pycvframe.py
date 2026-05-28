@@ -78,6 +78,41 @@ def cross_product(omega: np.ndarray, pos: np.ndarray) -> np.ndarray:
     return np.cross(omega, pos)
 
 
+def _batch_transform(lons: np.ndarray, lats: np.ndarray,
+                     ve: np.ndarray, vn: np.ndarray,
+                     rot_prime: np.ndarray):
+    """
+    Vectorized equivalent of apply_frame_rotation for N sites.
+
+    All trig is computed once over the whole array; the cross product is
+    inlined; only the North (R row 0) and East (R row 1) projections of
+    the rotation matrix are evaluated — the Up component is never needed.
+    """
+    lat = np.radians(lats)
+    lon = np.radians(lons)
+    slat, clat = np.sin(lat), np.cos(lat)
+    slon, clon = np.sin(lon), np.cos(lon)
+
+    # geod_to_xyz — vectorized, (N,) each
+    Nr = EARTH_RAD / np.sqrt(1.0 - EARTH_E2 * slat ** 2)
+    px = Nr * clat * clon
+    py = Nr * clat * slon
+    pz = Nr * (1.0 - EARTH_E2) * slat
+
+    # omega × pos — inline, avoids np.cross per-call overhead
+    ox, oy, oz = rot_prime
+    cvx = oy * pz - oz * py
+    cvy = oz * px - ox * pz
+    cvz = ox * py - oy * px
+
+    # R[0] (North) = [-slat*clon, -slat*slon,  clat]
+    # R[1] (East)  = [-slon,       clon,       0   ]
+    neu_N = -slat * clon * cvx - slat * slon * cvy + clat * cvz
+    neu_E = -slon * cvx        + clon * cvy
+
+    return ve - neu_E * 1000.0, vn - neu_N * 1000.0
+
+
 # ---------------------------------------------------------------------------
 # Frame-to-frame rotation lookup — delegates to frame_registry
 # ---------------------------------------------------------------------------
@@ -338,15 +373,13 @@ class PyCvframe:
         """
         lons = np.asarray(lons, dtype=float)
         lats = np.asarray(lats, dtype=float)
-        ve = np.asarray(ve, dtype=float)
-        vn = np.asarray(vn, dtype=float)
-        ve_new = np.empty_like(ve)
-        vn_new = np.empty_like(vn)
-        for i in range(len(lons)):
-            ve_new[i], vn_new[i] = apply_frame_rotation(
-                lons[i], lats[i], ve[i], vn[i], self.rot_prime
+        ve   = np.asarray(ve,   dtype=float)
+        vn   = np.asarray(vn,   dtype=float)
+        if self.rot_prime is None:
+            raise RuntimeError(
+                "No rotation pole set. Call run() or set rot_prime before transform_array()."
             )
-        return ve_new, vn_new
+        return _batch_transform(lons, lats, ve, vn, self.rot_prime)
 
 
 # ---------------------------------------------------------------------------
