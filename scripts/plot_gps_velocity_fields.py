@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import pygmt
 
+_DEFAULT_REGION = [-20, 125, 5, 60]   # Full Alpine-Himalayan belt
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -85,14 +86,15 @@ def _build_vectors(df):
     return vectors, vel_mag
 
 
-def _plot_figure(file_name, df):
+def _plot_figure(file_name, df, region=None):
     """Create and display one PyGMT figure for the velocity field in df."""
+    region  = region or _DEFAULT_REGION
     vectors, vel_mag = _build_vectors(df)
 
     fig = pygmt.Figure()
 
     # Base map
-    fig.basemap(region=[-20, 125, 5, 60], projection="M20c", frame="af")
+    fig.basemap(region=region, projection="M20c", frame="af")
 
     # Shaded topography
     pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
@@ -154,7 +156,7 @@ def _plot_figure(file_name, df):
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def plot_gps_velocity_fields(folder_path, plate_name=None):
+def plot_gps_velocity_fields(folder_path, plate_name=None, region=None):
     """Plot horizontal GPS velocity fields from CSV files in folder_path.
 
     Parameters
@@ -170,6 +172,9 @@ def plot_gps_velocity_fields(folder_path, plate_name=None):
         (case-insensitive) are plotted.  Examples: ``'eura'``, ``'arab'``,
         ``'igb14'``.
         Raises ``FileNotFoundError`` if no matching file is found.
+    region : list or None, optional
+        PyGMT region ``[lon_min, lon_max, lat_min, lat_max]``.
+        Defaults to ``_DEFAULT_REGION`` when None.
 
     Examples
     --------
@@ -189,7 +194,7 @@ def plot_gps_velocity_fields(folder_path, plate_name=None):
         if df is None:
             print(f"Skipping empty file: {file_name}")
             continue
-        _plot_figure(file_name, df)
+        _plot_figure(file_name, df, region=region)
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +204,7 @@ def plot_gps_velocity_fields(folder_path, plate_name=None):
 def plot_number_of_estimates(
     input_file,
     output_path="./results/figures/number_of_estimates.pdf",
+    region=None,
 ):
     """Plot number of independent GNSS velocity estimates per station.
 
@@ -207,15 +213,17 @@ def plot_number_of_estimates(
 
     Parameters
     ----------
-    input_file  : str  Path to site_statistics.csv.
-    output_path : str  Destination PDF.
+    input_file  : str        Path to site_statistics.csv.
+    output_path : str        Destination PDF.
+    region      : list|None  PyGMT region [lon_min, lon_max, lat_min, lat_max].
     """
     df = pd.read_csv(input_file)
     df["Num"] = df["Num"].clip(upper=15)
     df["Log_Num"] = np.log10(df["Num"])
 
+    _region = region or _DEFAULT_REGION
     fig = pygmt.Figure()
-    fig.basemap(region=[-20, 125, 5, 60], projection="M20c", frame="af")
+    fig.basemap(region=_region, projection="M20c", frame="af")
     pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
     fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=20)
     fig.coast(water="white", borders="1/0.1p,gray90",
@@ -284,6 +292,7 @@ def plot_vertical_velocity_histogram(
 def plot_vertical_velocity_fields(
     input_files,
     output_path="./results/figures/vertical_velocity_fields.pdf",
+    region=None,
 ):
     """Plot vertical GNSS velocities as colour-coded circles on a basemap.
 
@@ -291,9 +300,11 @@ def plot_vertical_velocity_fields(
     ----------
     input_files : list[str]  5-column .vel files (no header): Lon Lat U.vel U.sig Stat.
     output_path : str        Destination PDF.
+    region      : list|None  PyGMT region [lon_min, lon_max, lat_min, lat_max].
     """
+    _region = region or _DEFAULT_REGION
     fig = pygmt.Figure()
-    fig.basemap(region=[-20, 125, 5, 60], projection="M20c", frame="af")
+    fig.basemap(region=_region, projection="M20c", frame="af")
     pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
     fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=20)
     fig.coast(water="white", borders="1/0.1p,gray90",

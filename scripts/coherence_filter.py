@@ -3,128 +3,179 @@ import json
 import os
 import sys
 import glob
+import threading
 import pandas as pd
 import numpy as np
-from scipy.stats import lognorm
+from sklearn.neighbors import BallTree
 import concurrent.futures
 import time
 
-print() # Print a newline for better readability
-print(f"################### Removing outliers using the Z-Score method ###################")
+# ── thread-safe console output ───────────────────────────────────────────────
+_print_lock = threading.Lock()
 
-def haversine_distance(lon1, lat1, lon2, lat2):
-    # Convert latitude and longitude from degrees to radians
-    lon1, lat1, lon2, lat2 = map(np.radians, [lon1, lat1, lon2, lat2])
-    # Haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-    c = 2 * np.arcsin(np.sqrt(a))
-    radius = 6371  # Earth's radius in kilometers
-    return radius * c
+def _tprint(*args, **kwargs):
+    """Print with a lock so parallel workers do not interleave lines."""
+    with _print_lock:
+        print(*args, **kwargs)
 
+
+# ── per-location sigma level ─────────────────────────────────────────────────
 def get_region_stringency(lon, lat, regions):
-    default_sigma = 2  # Default sigma level
+    """Return the sigma threshold for (lon, lat) given the user's region list."""
+    if not regions:
+        return 2
     for region in regions:
         if (region['min_lon'] <= lon <= region['max_lon'] and
                 region['min_lat'] <= lat <= region['max_lat']):
             return region['sigma']
-    return default_sigma
+    return 2
 
-def filter_gps_velocities(file_name, radius=20, geo_strict=False, regions=[], special_case_file=None):
-    # Read the CSV file as a data frame, skipping the header row
+
+# ── single-file coherence filter ─────────────────────────────────────────────
+def filter_gps_velocities(file_name, output_clean_folder, output_excluded_folder,
+                           radius=20, geo_strict=False, regions=None,
+                           special_case_file=None):
+    """Remove velocity outliers using a local Z-score test within *radius* km.
+
+    For each station, the BallTree finds all neighbours within *radius* km in
+    O(N log N).  If ≥ 5 neighbours exist, stations whose E.vel or N.vel
+    deviates more than *sigma* standard deviations from the local mean are
+    flagged as outliers.
+
+    Parameters
+    ----------
+    file_name              : str   Space-separated CSV with a header row.
+    output_clean_folder    : str   Destination for cleaned station CSV.
+    output_excluded_folder : str   Destination for excluded station CSV.
+    radius                 : float Neighbourhood radius in km (default 20).
+    geo_strict             : bool  Apply region-specific sigma levels if True.
+    regions                : list  Region dicts with min/max_lon/lat and sigma.
+    special_case_file      : str   Basename pattern — skip filtering for matches.
+    """
+    regions = regions or []
+    os.makedirs(output_clean_folder,    exist_ok=True)
+    os.makedirs(output_excluded_folder, exist_ok=True)
+
     df = pd.read_csv(file_name, sep=' ', skiprows=1, header=None)
-    df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
-    
-    # Empty set to store filtered stations
+    df.columns = [
+        'Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj',
+        'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat',
+    ]
+
+    basename          = os.path.splitext(os.path.basename(file_name))[0]
     filtered_stations = set()
 
-    # Iterate over each GPS site
-    for i, row in df.iterrows():
-        site_lon, site_lat = row['Lon'], row['Lat']
-        
-        # Apply variable stringency if enabled, otherwise use default sigma level (2)
-        sigma_level = get_region_stringency(site_lon, site_lat, regions) if geo_strict else 2
+    if not (special_case_file and special_case_file in file_name):
+        lon_vals = df['Lon'].to_numpy(dtype=float)
+        lat_vals = df['Lat'].to_numpy(dtype=float)
+        e_vel    = df['E.vel'].to_numpy(dtype=float)
+        n_vel    = df['N.vel'].to_numpy(dtype=float)
 
-        # Calculate the Haversine distance between the GPS site and all stations
-        distances = haversine_distance(site_lon, site_lat, df['Lon'].values, df['Lat'].values)
-        # Filter stations that fall within the specified radius (strict adherence)
-        nearby_stations = df[distances <= radius]
+        # Build BallTree once — O(N log N) neighbourhood search instead of O(N²)
+        coords_rad   = np.radians(np.column_stack([lat_vals, lon_vals]))
+        radius_rad   = radius / 6371.0
+        tree         = BallTree(coords_rad, metric='haversine')
+        nbr_idx_list = tree.query_radius(coords_rad, r=radius_rad)
 
-        # Proceed if there are more than 5 nearby stations
-        if len(nearby_stations) >= 5:
-            # Calculate mean and standard deviation of nearby stations' E.vel and N.vel
-            e_vel_mean = nearby_stations['E.vel'].mean()
-            e_vel_std = nearby_stations['E.vel'].std()
-            n_vel_mean = nearby_stations['N.vel'].mean()
-            n_vel_std = nearby_stations['N.vel'].std()
+        for i, nbr_idx in enumerate(nbr_idx_list):
+            if len(nbr_idx) < 5:
+                continue
+            sigma = (get_region_stringency(lon_vals[i], lat_vals[i], regions)
+                     if geo_strict else 2)
 
-            e_vel_threshold = sigma_level * e_vel_std
-            n_vel_threshold = sigma_level * n_vel_std
-            # Filter stations with velocities outside the threshold
-            filtered_stations.update(nearby_stations[
-                (nearby_stations['E.vel'] < e_vel_mean - e_vel_threshold) |
-                (nearby_stations['E.vel'] > e_vel_mean + e_vel_threshold) |
-                (nearby_stations['N.vel'] < n_vel_mean - n_vel_threshold) |
-                (nearby_stations['N.vel'] > n_vel_mean + n_vel_threshold)
-            ].index)
+            nbr_e = e_vel[nbr_idx]
+            nbr_n = n_vel[nbr_idx]
+            # ddof=1 matches pandas Series.std() used in the original implementation
+            e_mean, e_std = nbr_e.mean(), nbr_e.std(ddof=1)
+            n_mean, n_std = nbr_n.mean(), nbr_n.std(ddof=1)
 
-    # Output results
-    output_folder = './results/sites_excluded_coherence'
-    os.makedirs(output_folder, exist_ok=True)
-    output_clean_coherence = './results/output_coherence_analysis'
-    os.makedirs(output_clean_coherence, exist_ok=True)
+            outlier_mask = (
+                (nbr_e < e_mean - sigma * e_std) |
+                (nbr_e > e_mean + sigma * e_std) |
+                (nbr_n < n_mean - sigma * n_std) |
+                (nbr_n > n_mean + sigma * n_std)
+            )
+            # Convert positional BallTree indices → DataFrame index labels
+            filtered_stations.update(df.index[nbr_idx[outlier_mask]])
 
-    if special_case_file in file_name:
-        filtered_stations = set() # Do not remove any stations for special case files where we want to preserve all stations
+    excluded_df = df.loc[sorted(filtered_stations)].drop_duplicates()
+    included_df = df.drop(sorted(filtered_stations)).drop_duplicates()
 
-    # Save excluded stations
-    filtered_df = df.loc[list(filtered_stations)].drop_duplicates()
-    removed_lines_file = os.path.join(output_folder, f'{os.path.splitext(os.path.basename(file_name))[0]}.csv')
-    filtered_df.to_csv(removed_lines_file, sep=' ', index=False)
+    excluded_df.to_csv(
+        os.path.join(output_excluded_folder, f'{basename}.csv'), sep=' ', index=False
+    )
+    included_df.to_csv(
+        os.path.join(output_clean_folder, f'{basename}.csv'), sep=' ', index=False
+    )
 
-    # Save included stations
-    included_lines_df = df.drop(list(filtered_stations)).drop_duplicates()
-    included_lines_file = os.path.join(output_clean_coherence, f'{os.path.splitext(os.path.basename(file_name))[0]}.csv')
-    included_lines_df.to_csv(included_lines_file, sep=' ', index=False)
+    n_removed = len(excluded_df)
+    n_total   = len(df)
+    pct       = n_removed / n_total * 100
+    _tprint(f"{basename}: removed {n_removed}/{n_total} ({pct:.2f}%)")
 
-    # Printing results
-    num_removed = len(filtered_df)
-    num_total = len(df)
-    percentage_removed = (num_removed / num_total) * 100
-    text = f"\n----------------------------------------------------------------------------------\nNumber of stations removed for {os.path.basename(file_name)}: {num_removed} / {num_total} ({percentage_removed:.2f}%)\nSites excluded: {removed_lines_file}\nFiltered velocities: {included_lines_file}"
-    print(text)
 
-def parallel_filter_gps_velocities(folder_path, radius=20, geo_strict=False, regions=[], special_case_file=None):
-    # Find all CSV files in the folder
+# ── parallel entry point ──────────────────────────────────────────────────────
+def parallel_filter_gps_velocities(folder_path, output_clean_folder,
+                                    output_excluded_folder, radius=20,
+                                    geo_strict=False, regions=None,
+                                    special_case_file=None):
+    """Run :func:`filter_gps_velocities` in parallel across all CSV files.
+
+    Parameters
+    ----------
+    folder_path            : str   Folder containing ``*.csv`` files.
+    output_clean_folder    : str   Destination for cleaned station CSVs.
+    output_excluded_folder : str   Destination for excluded station CSVs.
+    radius                 : float Neighbourhood radius in km (default 20).
+    geo_strict             : bool  Apply region-specific sigma levels if True.
+    regions                : list  Region dicts (see :func:`filter_gps_velocities`).
+    special_case_file      : str   Basename pattern to skip filtering for.
+    """
+    regions    = regions or []
     file_names = glob.glob(os.path.join(folder_path, '*.csv'))
-    # Create a ThreadPoolExecutor with the maximum number of worker threads
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        # Submit the filtering tasks for each file to the executor
-        results = [executor.submit(filter_gps_velocities, file_name, radius, geo_strict, regions, special_case_file) for file_name in file_names]
-        concurrent.futures.wait(results)
+        futures = [
+            executor.submit(
+                filter_gps_velocities, fn,
+                output_clean_folder, output_excluded_folder,
+                radius, geo_strict, regions, special_case_file,
+            )
+            for fn in file_names
+        ]
+        concurrent.futures.wait(futures)
+        for f in futures:
+            f.result()   # re-raise any worker exceptions
 
+
+# ── CLI ───────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Process GNSS data with optional geographic stringency and special case handling.')
-    parser.add_argument('folder_path', help='Path to the input folder containing CSV files')
-    parser.add_argument('--geo_strict', action='store_true', help='Enable geographic stringency levels based on regions defined in a JSON file')
-    parser.add_argument('--regions_json', type=str, help='Path to the JSON file with region definitions', default='')
-    parser.add_argument('--special_case_file', type=str, help='File name to handle specially (e.g., skip filtering)', default='')
-
+    parser = argparse.ArgumentParser(
+        description='Coherence filter for GNSS velocity fields.'
+    )
+    parser.add_argument('folder_path',
+                        help='Folder containing lognorm-filtered CSV files')
+    parser.add_argument('--output_clean',
+                        default='./results/output_coherence_analysis',
+                        help='Output folder for cleaned CSVs')
+    parser.add_argument('--output_excluded',
+                        default='./results/sites_excluded_coherence',
+                        help='Output folder for excluded-station CSVs')
+    parser.add_argument('--geo_strict',        action='store_true')
+    parser.add_argument('--regions_json',      default='')
+    parser.add_argument('--special_case_file', default='')
     args = parser.parse_args()
 
     regions = []
     if args.geo_strict and args.regions_json:
-        try:
-            with open(args.regions_json, 'r') as file:
-                regions = json.load(file)
-        except FileNotFoundError:
-            print(f"Error: JSON file {args.regions_json} not found.")
-            sys.exit(1)
-    
-    # Time the execution of the parallel_filter_gps_velocities function
-    start_time = time.time()
-    parallel_filter_gps_velocities(args.folder_path, geo_strict=args.geo_strict, regions=regions, special_case_file=args.special_case_file)
-    end_time = time.time()
-    print(f"----------------------------------------------------------------------------------")
-    print(f"Time taken: {end_time - start_time:.2f} seconds")
+        with open(args.regions_json) as fh:
+            regions = json.load(fh)
+
+    t0 = time.time()
+    parallel_filter_gps_velocities(
+        args.folder_path,
+        args.output_clean, args.output_excluded,
+        geo_strict=args.geo_strict, regions=regions,
+        special_case_file=args.special_case_file,
+    )
+    print(f"coherence_filter done in {time.time() - t0:.2f} s")

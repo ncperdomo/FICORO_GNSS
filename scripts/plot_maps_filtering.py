@@ -3,178 +3,114 @@ import glob
 import pandas as pd
 import numpy as np
 import pygmt
-from geopy.distance import geodesic
 
-def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figure_folder):
-    # Find all CSV files in the output_coherence_analysis folder
+_DEFAULT_REGION = [-20, 125, 5, 60]
+
+
+def plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence,
+                        figure_folder, region=None):
+    """Plot accepted and filtered GPS velocity vectors for each input file.
+
+    Parameters
+    ----------
+    folder_path        : str        Folder of coherence-filtered CSV files.
+    excluded_lognorm   : str        Folder of lognorm-excluded station CSVs.
+    excluded_coherence : str        Folder of coherence-excluded station CSVs.
+    figure_folder      : str        Destination folder for output PDFs.
+    region             : list|None  PyGMT region [lon_min, lon_max, lat_min, lat_max].
+    """
+    _region = region or _DEFAULT_REGION
     file_names = glob.glob(os.path.join(folder_path, '*.csv'))
+    os.makedirs(figure_folder, exist_ok=True)
 
-    # Create a new figure for each file
     for file_name in file_names:
-        # Create a new figure
         fig = pygmt.Figure()
-
-        # Set the region and projection of the map
-        #fig.basemap(region=[-15, 70, 5, 60], projection='M10c', frame='afg')
-        fig.basemap(region=[-20, 125, 5, 60], projection='M20c', frame='af') # All Alpine-Himalayan belt
-
-        # Create a custom color palette for the relief shading
+        fig.basemap(region=_region, projection='M20c', frame='af')
         pygmt.makecpt(cmap="gray95,gray90,gray85", series=[-10000, 10000, 100])
-        
-        # Add shaded topography with transparency
-        fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=20) # nan_transparent=True results in error in the latest GMT version
+        fig.grdimage(grid="@earth_relief_03m", cmap=True, shading=True, transparency=20)
+        fig.coast(water='white', borders="1/0.1p,gray90",
+                  shorelines="0.1p,black", area_thresh=4000, resolution='h')
 
-        # Add coastlines
-        fig.coast(water='white', borders="1/0.1p,gray90", shorelines="0.1p,black", area_thresh=4000, resolution='h')
-
-        # Read the CSV file from output_coherence_analysis folder
         df = pd.read_csv(file_name, sep=' ', skiprows=1, header=None)
-        df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj', 'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
+        df.columns = ['Lon', 'Lat', 'E.vel', 'N.vel', 'E.adj', 'N.adj',
+                      'E.sig', 'N.sig', 'Corr', 'U.vel', 'U.adj', 'U.sig', 'Stat']
 
-        # Check if the data frame is empty
         if df.shape[0] == 0:
             print(f"Skipping empty file: {file_name}")
             continue
-        
-        # Extract the coordinates, E and N velocity components, and E and N sig from the data frame
-        lon = df['Lon']
-        lat = df['Lat']
-        e_vel = df['E.vel']
-        n_vel = df['N.vel']
-        e_sig = df['E.sig']
-        n_sig = df['N.sig']
 
-        # Calculate the velocity magnitude for scaling
+        lon   = df['Lon'].to_numpy()
+        lat   = df['Lat'].to_numpy()
+        e_vel = df['E.vel'].to_numpy()
+        n_vel = df['N.vel'].to_numpy()
+
         vel_mag = np.sqrt(e_vel**2 + n_vel**2)
-
-        # Normalize the velocity magnitude to the range [0, 1]
         normalized_vel_mag = (vel_mag - vel_mag.min()) / (vel_mag.max() - vel_mag.min())
+        direction = np.degrees(np.arctan2(n_vel, e_vel))
+        vectors = np.column_stack([lon, lat, direction, normalized_vel_mag]).tolist()
 
-        # Create a list to store the vectors
-        vectors = []
+        fig.plot(style='v0.1c+e', data=vectors, fill='blue', pen='black',
+                 label='Accepted vel.')
 
-        # Iterate over each site
-        for i in range(len(df)):
-            x_start = lon[i]
-            y_start = lat[i]
-            direction_degrees = np.degrees(np.arctan2(n_vel[i], e_vel[i]))
-            length = normalized_vel_mag[i] #* 0.5
-
-            # Add the vector to the list
-            vectors.append([x_start, y_start, direction_degrees, length])
-
-        # Plot the GPS velocity vectors from output_coherence_analysis folder (blue)
-        fig.plot(
-            style='v0.1c+e',
-            data=vectors,
-            fill='blue',
-            pen='black',
-            label='Accepted vel.',
-        )
-
-        # Get the base file name without extension
         base_name = os.path.splitext(os.path.basename(file_name))[0]
 
-        # Read the CSV file from excluded_lognorm folder
+        # Lognorm-excluded stations
         lognorm_file = os.path.join(excluded_lognorm, f"{base_name}.csv")
         if os.path.exists(lognorm_file):
             try:
-                df_lognorm = pd.read_csv(lognorm_file, sep=' ', skiprows=1, header=None, on_bad_lines='skip')
-                if df_lognorm.shape[0] == 0:
-                    pass
-                    #print(f"Skipping empty file: {lognorm_file}")
-                else:
-                    lon_lognorm = df_lognorm[0]
-                    lat_lognorm = df_lognorm[1]
-                    e_vel_lognorm = df_lognorm[2]
-                    n_vel_lognorm = df_lognorm[3]
-
-                    vectors_lognorm = []
-                    for j in range(len(df_lognorm)):
-                        x_start_lognorm = lon_lognorm[j]
-                        y_start_lognorm = lat_lognorm[j]
-                        direction_degrees_lognorm = np.degrees(np.arctan2(n_vel_lognorm[j], e_vel_lognorm[j])) 
-                        length_lognorm = normalized_vel_mag[j] * 0.5
-
-                        vectors_lognorm.append([x_start_lognorm, y_start_lognorm, direction_degrees_lognorm, length_lognorm])
-
-                    # Plot the GPS velocity vectors from excluded_lognorm folder (orange)
-                    fig.plot(
-                        style='v0.1c+e',
-                        data=vectors_lognorm,
-                        fill='orange',
-                        pen='orange',
-                        label='Filtered lognorm',
-                    )
-
+                df_ln = pd.read_csv(lognorm_file, sep=' ', skiprows=1,
+                                    header=None, on_bad_lines='skip')
+                if df_ln.shape[0] > 0:
+                    e_ln = df_ln.iloc[:, 2].to_numpy()
+                    n_ln = df_ln.iloc[:, 3].to_numpy()
+                    vm_ln = np.sqrt(e_ln**2 + n_ln**2)
+                    # scale within the accepted-station range, halved for visual distinction
+                    norm_ln = (vm_ln - vel_mag.min()) / (vel_mag.max() - vel_mag.min()) * 0.5
+                    dir_ln  = np.degrees(np.arctan2(n_ln, e_ln))
+                    vecs_ln = np.column_stack([
+                        df_ln.iloc[:, 0].to_numpy(),
+                        df_ln.iloc[:, 1].to_numpy(),
+                        dir_ln, norm_ln,
+                    ]).tolist()
+                    fig.plot(style='v0.1c+e', data=vecs_ln, fill='orange',
+                             pen='orange', label='Filtered lognorm')
             except pd.errors.EmptyDataError:
                 pass
-                #print(f"Skipping empty file: {lognorm_file}")
-                  
-        # Read the CSV file from excluded_coherence folder
+
+        # Coherence-excluded stations
         coherence_file = os.path.join(excluded_coherence, f"{base_name}.csv")
         if os.path.exists(coherence_file):
             try:
-                df_coherence = pd.read_csv(coherence_file, sep=' ', skiprows=1, header=None, on_bad_lines='skip')
-                if df_coherence.shape[0] == 0:
-                    pass
-                    #print(f"Skipping empty file: {coherence_file}")
-                else:
-                    lon_coherence = df_coherence[0]
-                    lat_coherence = df_coherence[1]
-                    e_vel_coherence = df_coherence[2]
-                    n_vel_coherence = df_coherence[3]
-
-                    vectors_coherence = []
-                    for k in range(len(df_coherence)):
-                        x_start_coherence = lon_coherence[k]
-                        y_start_coherence = lat_coherence[k]
-                        direction_degrees_coherence = np.degrees(np.arctan2(n_vel_coherence[k], e_vel_coherence[k])) 
-                        length_coherence = normalized_vel_mag[k] * 0.5
-
-                        vectors_coherence.append([x_start_coherence, y_start_coherence, direction_degrees_coherence, length_coherence])
-
-                    # Plot the GPS velocity vectors from excluded_coherence folder (red)
-                    fig.plot(
-                        style='v0.1c+e',
-                        data=vectors_coherence,
-                        fill='red',
-                        pen='red',
-                        label='Filtered coherence',
-                    )
-
+                df_co = pd.read_csv(coherence_file, sep=' ', skiprows=1,
+                                    header=None, on_bad_lines='skip')
+                if df_co.shape[0] > 0:
+                    e_co = df_co.iloc[:, 2].to_numpy()
+                    n_co = df_co.iloc[:, 3].to_numpy()
+                    vm_co = np.sqrt(e_co**2 + n_co**2)
+                    norm_co = (vm_co - vel_mag.min()) / (vel_mag.max() - vel_mag.min()) * 0.5
+                    dir_co  = np.degrees(np.arctan2(n_co, e_co))
+                    vecs_co = np.column_stack([
+                        df_co.iloc[:, 0].to_numpy(),
+                        df_co.iloc[:, 1].to_numpy(),
+                        dir_co, norm_co,
+                    ]).tolist()
+                    fig.plot(style='v0.1c+e', data=vecs_co, fill='red',
+                             pen='red', label='Filtered coherence')
             except pd.errors.EmptyDataError:
                 pass
-                #print(f"Skipping empty file: {coherence_file}")
 
-        # Add a legend
         fig.legend(position='JTR+o0.15c/-1.25c', box=True)
-        
-        # Add scale bar
         with pygmt.config(FONT_ANNOT_PRIMARY='8p', FONT_LABEL='8p'):
             fig.basemap(map_scale="JBR+o-9c/-0.8c+c0+w1000k+f+lkm")
 
-        print(f"Plotting GPS velocities for {base_name} data set")
+        print(f"Plotting GPS velocities for {base_name}")
+        fig.savefig(os.path.join(figure_folder, f'{base_name}_map.pdf'), dpi=300)
 
-        # Show the figure
-        # fig.show()
 
-        # Create a directory to store the figure files
-        os.makedirs(figure_folder, exist_ok=True)
-
-        # Save the figure
-        figure_file_pdf = os.path.join(figure_folder, f'{base_name}_map.pdf')
-        #figure_file_jpg = os.path.join(figure_folder, f'{base_name}_map.jpg')
-        #figure_file_png = os.path.join(figure_folder, f'{base_name}_map.png')
-
-        fig.savefig(figure_file_pdf, dpi=300)
-        #fig.savefig(figure_file_jpg, dpi=300)
-        #fig.savefig(figure_file_png, dpi=300)
-
-# Folder paths containing space-separated CSV files
-figures_path = './results/figures'
-folder_path = './results/output_coherence_analysis'
-excluded_lognorm = './results/sites_excluded_lognorm_99'
-excluded_coherence = './results/sites_excluded_coherence'
-
-plot_gps_velocities(folder_path, excluded_lognorm, excluded_coherence, figures_path)
+if __name__ == "__main__":
+    plot_gps_velocities(
+        folder_path='./results/output_coherence_analysis',
+        excluded_lognorm='./results/sites_excluded_lognorm_99',
+        excluded_coherence='./results/sites_excluded_coherence',
+        figure_folder='./results/figures',
+    )

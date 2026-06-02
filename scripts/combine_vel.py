@@ -375,5 +375,5 @@ if __name__ == "__main__":
     end_time = time.time()
 
     # Calculate and print the elapsed time in minutes
-    elapsed_time = (end_time - start_time) / 60
-    print("Time taken to combine GNSS velocity fields: {:.2f} minutes".format(elapsed_time))
+    elapsed_time = (end_time - start_time) 
+    print("Time taken to combine GNSS velocity fields: {:.2f} seconds".format(elapsed_time))

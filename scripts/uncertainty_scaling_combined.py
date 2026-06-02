@@ -79,6 +79,7 @@ def plot_uncertainty_distributions(original_uncertainties, scaled_uncertainties,
     # Save the figures to the results/figures folder
     plt.savefig(f'./results/figures/{filename}', format='pdf', dpi=300)
     plt.show()
+    plt.close()
 
 def read_velocity_solution(filename):
     """

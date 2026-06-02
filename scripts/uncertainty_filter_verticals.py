@@ -39,7 +39,7 @@ class UncertaintyFilterVerticals:
 
         # Plot histogram and fitted distribution
         plt.figure(figsize=(10, 6))
-        plt.hist(positive_uncertainties, bins=350, alpha=0.7, color='lightgray', edgecolor='black', density=True, label='Vertical velocity (density)')
+        plt.hist(positive_uncertainties, bins=350, alpha=0.7, color='lightgray', edgecolor='black', density=True, label='Vertical vel. uncertainty (density)')
         plt.plot(x_vals, pdf_vals, label='Lognormal fit', color='red')
         plt.axvline(p99, color='black', linestyle='dashed', linewidth=1.5, label=f'99th percentile: {p99:.2f}')
         plt.xlabel('Vertical velocity uncertainty (mm/yr)')
@@ -53,6 +53,7 @@ class UncertaintyFilterVerticals:
             output_figure_path = os.path.join(self.figures_path, 'vertical_uncertainty_distribution.pdf')
             plt.savefig(output_figure_path, format='pdf', dpi=300)
         plt.show()
+        plt.close()
 
     def filter_uncertainties(self):
         """
