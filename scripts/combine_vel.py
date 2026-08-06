@@ -238,12 +238,11 @@ def combine_velocities(input_folder, combined_folder):
             if chosen_ref.endswith('eura'):
                 aggregated_frames.append(combined_df.iloc[g])
 
-            # --- Outlier detection (IQR on magnitude/azimuth) ---
-            # In the normal case (not all-outliers), the original code's
-            # group_df.loc[result.index] = result.values is a no-op, so the
-            # medians below are always computed over the full un-modified rows.
-            # We therefore compute medians directly and only invoke the outlier
-            # test to emit the same warning messages as the original code.
+            # --- Outlier detection (IQR on horizontal magnitude/azimuth) ---
+            # Compute the outlier mask, then take medians over the retained
+            # (non-outlier) rows only. This is the actual purpose of the
+            # filtering step: the combined velocity is the median of the
+            # consistent solutions, with discordant ones excluded.
             e_vel = rows[:, 2]
             n_vel = rows[:, 3]
             u_vel = rows[:, 9]
@@ -263,26 +262,35 @@ def combine_velocities(input_folder, combined_folder):
                 (az_diffs  < q1_a - 1.5*iqr_a) | (az_diffs  > q3_a + 1.5*iqr_a)
             )
 
-            if is_outlier.all():
-                # All-outliers edge case: warn if all U values are also zero
-                if not np.any(u_vel != 0):
-                    print("Warning: All vertical velocities are zero. Assigning 0.00 as the median.")
+            # Keep only non-outlier rows. 
+            # If the IQR filter rejects every observation, fall back to using
+            # the complete group (i.e., no filtering), so that a representative
+            # median can still be computed. This avoids emptying the group.
+            keep = ~is_outlier
+            if not keep.any():
+                keep = np.ones_like(is_outlier, dtype=bool)
 
-            # Step 2: Median velocities (over all rows — see note above)
+            # Retained rows: everything below reads from this single slice.
+            clean_rows = rows[keep]
+
+            # Step 2: Median horizontal velocities over retained rows
             # Use np.round (not Python built-in round) to match pandas .round() behavior
-            e_med = float(np.round(np.median(e_vel), 2))
-            n_med = float(np.round(np.median(n_vel), 2))
-            nonzero_u = u_vel[u_vel != 0]
-            if len(nonzero_u) == 0:
+            e_med = float(np.round(np.median(clean_rows[:, 2]), 2))
+            n_med = float(np.round(np.median(clean_rows[:, 3]), 2))
+
+            # Vertical component: median of retained, non-zero U values
+            u_keep = clean_rows[:, 9]
+            nonzero_u = u_keep[u_keep != 0]
+            if nonzero_u.size == 0: 
                 print("Warning: All vertical velocities are zero. Assigning NaN as the median.")
                 u_median = np.nan
             else:
                 u_median = float(np.round(np.median(nonzero_u), 2))
 
-            # Step 3: Median uncertainties
-            e_sig = float(np.round(np.median(rows[:, 6]), 2))
-            n_sig = float(np.round(np.median(rows[:, 7]), 2))
-            u_sig = float(np.round(np.median(rows[:, 11]), 2))
+            # Step 3: Median uncertainties over retained rows
+            e_sig = float(np.round(np.median(clean_rows[:, 6]), 2))
+            n_sig = float(np.round(np.median(clean_rows[:, 7]), 2))
+            u_sig = float(np.round(np.median(clean_rows[:, 11]), 2))
 
             output_rows.append({
                 'Lon':   float(np.round(chosen_row[0], 5)),

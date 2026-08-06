@@ -40,6 +40,16 @@ def align_to_itrf14(input_vel_folder, rotation_folder, reference_vel_path,
             f"Reference velocity file not found: {reference_vel_path}"
         )
 
+    # Make sure the link file exists; if not, create a default one 
+    # linking all stations with 1 km distance.
+    if not os.path.exists(lnk_file_path):
+            print(f"Creating {lnk_file_path}...")
+            lnk_dir = os.path.dirname(lnk_file_path)
+            if lnk_dir:
+                os.makedirs(lnk_dir, exist_ok=True)
+            with open(lnk_file_path, "w") as fh:
+                fh.write(" eq_dist 1000\n")
+
     if os.path.exists(rotation_folder):
         for entry in os.listdir(rotation_folder):
             ep = os.path.join(rotation_folder, entry)
