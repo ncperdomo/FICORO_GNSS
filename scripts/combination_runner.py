@@ -70,7 +70,7 @@ def run_euler_rotations(euler_poles, igb14_folder, igb_nocomb_path,
 
 def run_velocity_combination(frames, combination_script_path,
                               igb_nocomb_path, results_path,
-                              output_folder, mode='auto'):
+                              output_folder, mode='auto', combine_method='median'):
     """Run the combine_vel.py script for each reference frame.
 
     Parameters
@@ -82,17 +82,24 @@ def run_velocity_combination(frames, combination_script_path,
     output_folder           : str        Destination for combined velocity CSVs.
     mode                    : str        ``'auto'``, ``'parallel'``, or
                                          ``'sequential'``.
+    combine_method          : str        ``'median'`` or ``'weighted_mean'``.
     """
     if not os.path.exists(combination_script_path):
         raise FileNotFoundError(
             f"combine_vel.py not found: {combination_script_path}"
         )
 
+    if combine_method not in {'median', 'weighted_mean'}:
+        raise ValueError(
+            f"Invalid combine_method '{combine_method}'. "
+            "Use 'median' or 'weighted_mean'."
+        )
+
     def _combine_one(ref_frame):
         print(f"Combining GPS velocities in {ref_frame}-fixed reference frame ...")
         folder = os.path.join(results_path, igb_nocomb_path, ref_frame)
         subprocess.run(
-            ['python', combination_script_path, folder, output_folder],
+            ['python', combination_script_path, folder, output_folder, combine_method],
             check=True,
         )
 
@@ -100,6 +107,9 @@ def run_velocity_combination(frames, combination_script_path,
     print("               Combining rotated velocity fields              ")
     print("--------------------------------------------------------------")
     print()
+    # Print the method being used for combining velocities
+    print(f"Combining velocities using the {combine_method} method.")
+    print("--------------------------------------------------------------") 
 
     if mode == 'sequential':
         print("Sequential execution.")
@@ -129,3 +139,4 @@ def run_velocity_combination(frames, combination_script_path,
         raise ValueError(
             f"Invalid mode '{mode}'. Use 'auto', 'parallel', or 'sequential'."
         )
+
